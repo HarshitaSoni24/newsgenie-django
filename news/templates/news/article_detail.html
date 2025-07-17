@@ -1,0 +1,20 @@
+{% extends 'base.html' %}
+{% block title %}{{ article.title }}{% endblock %}
+{% block content %}
+<div class="container mt-4">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'news:article_list' %}">Articles</a></li>
+            <li class="breadcrumb-item active" aria-current="page">{{ article.title|truncatechars:30 }}</li>
+        </ol>
+    </nav>
+    <h1>{{ article.title }}</h1>
+    <p class="text-muted">By {{ article.author }} on {{ article.publication_date|date:"F d, Y" }}</p>
+    {% for category in article.categories.all %}
+        <span class="badge bg-secondary me-1">{{ category.name }}</span>
+    {% endfor %}
+    <hr>
+    <div class="lead">{{ article.content|linebreaksbr }}</div>
+    <a href="{% url 'news:article_list' %}" class="btn btn-outline-primary mt-4">Back to Articles</a>
+</div>
+{% endblock %}
