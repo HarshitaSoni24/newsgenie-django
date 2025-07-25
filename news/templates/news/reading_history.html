@@ -1,0 +1,15 @@
+{% extends 'news/base.html' %}
+{% block title %}Reading History{% endblock %}
+{% block content %}
+<h2>Your Reading History</h2>
+<ul class="list-group mt-3">
+    {% for record in history %}
+        <li class="list-group-item">
+            <strong>{{ record.article.title }}</strong> —
+            read at {{ record.read_at|date:"F d, Y H:i" }}
+        </li>
+    {% empty %}
+        <li class="list-group-item">You haven’t read any articles yet.</li>
+    {% endfor %}
+</ul>
+{% endblock %}

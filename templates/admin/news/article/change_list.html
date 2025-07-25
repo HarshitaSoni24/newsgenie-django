@@ -1,0 +1,20 @@
+{% extends "admin/change_list.html" %}
+
+{% block content %}
+  {% if article_stats %}
+    <div style="
+      padding: 12px;
+      background-color: var(--body-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      margin-bottom: 16px;
+      color: var(--body-fg);
+    ">
+      <strong style="font-size: 16px;">📊 Article Statistics:</strong><br>
+      ✅ Approved: {{ article_stats.approved }} &nbsp;|&nbsp;
+      ⏳ Pending: {{ article_stats.pending }} &nbsp;|&nbsp;
+      📄 Total: {{ article_stats.total }}
+    </div>
+  {% endif %}
+  {{ block.super }}
+{% endblock %}

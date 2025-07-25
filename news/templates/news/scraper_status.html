@@ -1,0 +1,16 @@
+{% extends 'news/base.html' %}
+{% block title %}Scraper Status{% endblock %}
+{% block content %}
+<h2 class="mb-3">Scraping Completed</h2>
+{% if new_articles %}
+    <p>{{ new_articles|length }} new articles added:</p>
+    <ul>
+        {% for article in new_articles %}
+            <li>{{ article.title }} ({{ article.source }})</li>
+        {% endfor %}
+    </ul>
+{% else %}
+    <p>No new articles found.</p>
+{% endif %}
+<a href="{% url 'news:article_list' %}" class="btn btn-primary mt-3">Back to Articles</a>
+{% endblock %}

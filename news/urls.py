@@ -1,9 +1,13 @@
 from django.urls import path
-from .views import ArticleListView, ArticleDetailView
+from . import views
 
-app_name = 'news'
+app_name = "news"
 
 urlpatterns = [
-    path('', ArticleListView.as_view(), name='article_list'),
-    path('article/<int:pk>/', ArticleDetailView.as_view(), name='detail'),
+    path('', views.article_list, name="article_list"),
+    path('article/<int:pk>/', views.article_detail, name="detail"),
+    path('preferences/', views.preference_view, name="preferences"),
+    path('recommendations/', views.personalized_recommendations, name="recommendations"),
+    path('history/', views.reading_history, name="history"),
+    path('scraper/', views.run_scraper_view, name="scraper"),
 ]

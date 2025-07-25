@@ -1,55 +1,74 @@
-{% extends 'base.html' %}
+{% extends 'news/base.html' %}
+
 {% block title %}All Articles{% endblock %}
+
 {% block content %}
-<div class="container mt-4">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h1 class="mb-0">Latest NewsGenie AI Articles {% if current_category != 'All' %}in {{ current_category }}{% endif %}</h1>
-        <div>
-            <a href="{% url 'news:article_list' %}" class="btn btn-outline-secondary btn-sm {% if current_category == 'All' %}active{% endif %}">All</a>
+    <div class="d-flex justify-content-between align-items-center mt-4 flex-wrap">
+        <h1 class="mb-3">Latest ByteNews Articles {% if current_category != 'All' %}in {{ current_category }}{% endif %}</h1>
+        <div class="mb-3">
+            <a href="{% url 'news:article_list' %}?category=All" class="btn btn-outline-secondary btn-sm {% if current_category == 'All' %}active{% endif %}">All</a>
             {% for category in categories %}
-                <a href="?category={{ category.name }}" class="btn btn-outline-secondary btn-sm {% if current_category == category.name %}active{% endif %}">{{ category.name }}</a>
+                <a href="{% url 'news:article_list' %}?category={{ category.name }}" class="btn btn-outline-secondary btn-sm {% if current_category == category.name %}active{% endif %}">{{ category.name }}</a>
             {% endfor %}
         </div>
     </div>
-    <div class="row">
+
+    <!-- 🔍 Search Bar -->
+    <form method="GET" action="{% url 'news:article_list' %}" class="mt-3 mb-4">
+        <input type="hidden" name="category" value="{{ request.GET.category }}">
+        <div class="input-group">
+            <input type="text" name="q" class="form-control" placeholder="Search articles..." value="{{ request.GET.q }}">
+            <button class="btn btn-primary" type="submit">Search</button>
+        </div>
+    </form>
+
+    <!-- 📰 Article Cards -->
+    <div class="row mt-4">
         {% for article in articles %}
-        <div class="col-md-6 col-lg-4 mb-4">
-            <div class="card h-100">
-                <div class="card-body">
-                    <h5 class="card-title">{{ article.title }}</h5>
-                    <h6 class="card-subtitle mb-2 text-muted">By {{ article.author }} on {{ article.publication_date|date:"F d, Y" }}</h6>
-                    {% for category in article.categories.all %}
-                        <span class="badge bg-primary me-1">{{ category.name }}</span>
-                    {% endfor %}
-                    <p class="card-text mt-2">{{ article.content|truncatechars:150 }}</p>
-                    <a href="{% url 'news:detail' article.pk %}" class="btn btn-sm btn-primary">Read More</a>
+            <div class="col-md-6 col-lg-4 mb-4">
+                <div class="card h-100 shadow-sm">
+                    <div class="card-body">
+                        <h5 class="card-title">{{ article.title }}</h5>
+                        <h6 class="card-subtitle mb-2 text-muted">By {{ article.author }} on {{ article.published_at|date:"F d, Y" }}</h6>
+                        {% for category in article.categories.all %}
+                            <span class="badge bg-primary me-1">{{ category.name }}</span>
+                        {% endfor %}
+                        <p class="card-text mt-2">{{ article.summary|default:article.content|truncatechars:150 }}</p>
+                        <a href="{% url 'news:detail' article.pk %}" class="btn btn-sm btn-primary">Read More</a>
+                    </div>
                 </div>
             </div>
-        </div>
         {% empty %}
-        <p>No articles found.</p>
+            <p class="col-12">No articles found.</p>
         {% endfor %}
     </div>
+
+    <!-- 📄 Pagination -->
     {% if is_paginated %}
-    <nav>
-        <ul class="pagination justify-content-center mt-4">
-            {% if page_obj.has_previous %}
-            <li class="page-item">
-                <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if request.GET.category %}&category={{ request.GET.category }}{% endif %}">Previous</a>
-            </li>
-            {% endif %}
-            {% for i in page_obj.paginator.page_range %}
-            <li class="page-item {% if page_obj.number == i %}active{% endif %}">
-                <a class="page-link" href="?page={{ i }}{% if request.GET.category %}&category={{ request.GET.category }}{% endif %}">{{ i }}</a>
-            </li>
-            {% endfor %}
-            {% if page_obj.has_next %}
-            <li class="page-item">
-                <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if request.GET.category %}&category={{ request.GET.category }}{% endif %}">Next</a>
-            </li>
-            {% endif %}
-        </ul>
-    </nav>
+        <nav aria-label="Page navigation">
+            <ul class="pagination justify-content-center mt-4">
+                {% if page_obj.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if request.GET.category %}&category={{ request.GET.category }}{% endif %}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}">Previous</a>
+                    </li>
+                {% else %}
+                    <li class="page-item disabled"><span class="page-link">Previous</span></li>
+                {% endif %}
+
+                {% for i in page_obj.paginator.page_range %}
+                    <li class="page-item {% if page_obj.number == i %}active{% endif %}">
+                        <a class="page-link" href="?page={{ i }}{% if request.GET.category %}&category={{ request.GET.category }}{% endif %}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}">{{ i }}</a>
+                    </li>
+                {% endfor %}
+
+                {% if page_obj.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if request.GET.category %}&category={{ request.GET.category }}{% endif %}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}">Next</a>
+                    </li>
+                {% else %}
+                    <li class="page-item disabled"><span class="page-link">Next</span></li>
+                {% endif %}
+            </ul>
+        </nav>
     {% endif %}
-</div>
 {% endblock %}
