@@ -5,16 +5,16 @@ from django.core.paginator import Paginator
 from django.db.models import Q 
 from .models import Article, Category, UserPreference, ReadingHistory
 from .forms import UserPreferenceForm, SummaryFeedbackForm
-from news.utils.scraper import fetch_articles
+from news.utils.scraper import fetch_articles, generate_audio_summary  # ✅ make sure this import exists
 from django.contrib.admin.views.decorators import staff_member_required
 from django.http import Http404
+import os
 
 
 def article_list(request):
     category = request.GET.get("category", "All")
     query = request.GET.get("q", "")
 
-    # ✅ Show only approved articles
     articles = Article.objects.filter(approved=True).order_by('-published_at')
 
     if category and category != "All":
@@ -42,9 +42,15 @@ def article_list(request):
 def article_detail(request, pk):
     article = get_object_or_404(Article, pk=pk)
 
-    # ✅ Restrict unapproved article access for non-staff users
     if not article.approved and not request.user.is_staff:
         raise Http404("This article is pending approval.")
+
+    # ✅ Fallback: Generate audio if not already present
+    if not article.audio_file and article.summary:
+        audio_url = generate_audio_summary(article.summary, article.id)
+        if audio_url:
+            article.audio_file.name = audio_url.replace('/media/', '')
+            article.save()
 
     feedback_submitted = False
     if request.method == "POST":
@@ -59,7 +65,7 @@ def article_detail(request, pk):
         form = SummaryFeedbackForm()
 
     if request.user.is_authenticated:
-        ReadingHistory.objects.get_or_create(user=request.user, article=article)
+        ReadingHistory.objects.filter(user=request.user, article=article).first() or ReadingHistory.objects.create(user=request.user, article=article)
 
     return render(request, "news/article_detail.html", {
         "article": article,
@@ -75,7 +81,7 @@ def preference_view(request):
         form = UserPreferenceForm(request.POST, instance=user_pref)
         if form.is_valid():
             form.save()
-            return redirect("news:personalized_recommendations")
+            return redirect("news:recommendations")
     else:
         form = UserPreferenceForm(instance=user_pref)
     return render(request, "news/user_preference.html", {"form": form})
@@ -86,7 +92,6 @@ def personalized_recommendations(request):
     user_pref = UserPreference.objects.filter(user=request.user).first()
     articles = Article.objects.none()
     if user_pref and user_pref.preferred_categories.exists():
-        # ✅ Also filter approved articles in recommendations
         articles = Article.objects.filter(
             category__in=user_pref.preferred_categories.all(),
             approved=True

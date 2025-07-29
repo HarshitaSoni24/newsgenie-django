@@ -4,33 +4,44 @@
 
 {% block content %}
 <div class="container mt-4">
-    <!-- Title -->
+    <!-- 📰 Title & Info -->
     <h1 class="mb-3">{{ article.title }}</h1>
     <p class="text-muted">By {{ article.author }} on {{ article.published_at|date:"F d, Y" }}</p>
 
-    <!-- Categories -->
+    <!-- 🏷️ Categories -->
     {% for category in article.categories.all %}
-        <span class="badge bg-secondary me-1">{{ category.name }}</span>
+        <span class="badge bg-primary me-1">{{ category.name }}</span>
     {% endfor %}
 
-    <!-- Summary Section -->
+    <!-- 📌 Summary Section -->
     {% if article.summary %}
-        <h4 class="mt-4">Summary</h4>
-        <p>{{ article.summary|linebreaksbr }}</p>
+        <h4 class="mt-4">📝 Summary</h4>
+        <p class="text-body">{{ article.summary|linebreaksbr }}</p>
     {% endif %}
 
-    <!-- Feedback Stats -->
+    {% if article.audio_file %}
+    <div class="mt-4">
+        <h5>🎧 Listen to Summary:</h5>
+        <audio controls style="width: 100%;">
+            <source src="{{ article.audio_file.url }}" type="audio/mpeg">
+            Your browser does not support the audio element.
+        </audio>
+    </div>
+    {% endif %}
+
+
+    <!-- 📊 Feedback Stats -->
     {% if feedback_total > 0 %}
-        <div class="mt-3">
+        <div class="alert alert-info mt-3">
             <strong>{{ feedback_useful }}</strong> out of <strong>{{ feedback_total }}</strong> users found this summary useful.
         </div>
     {% endif %}
 
-    <!-- Feedback Count Section -->
+    <!-- 📈 Feedback Count Section -->
     {% if article.feedback_counts %}
         {% with counts=article.feedback_counts %}
             <div class="mt-3">
-                <p><strong>Summary Feedback:</strong></p>
+                <p class="fw-semibold">Summary Feedback:</p>
                 <p>👍 Useful: {{ counts.useful|default:"0" }} | 👎 Not Useful: {{ counts.not_useful|default:"0" }}</p>
             </div>
         {% endwith %}
@@ -38,10 +49,10 @@
 
     <hr>
 
-    <!-- Full Article Content -->
+    <!-- 📃 Full Article Content -->
     <div class="lead">{{ article.content|linebreaksbr }}</div>
 
-    <!-- Back Button -->
-    <a href="{% url 'news:article_list' %}" class="btn btn-outline-primary mt-4">Back to Articles</a>
+    <!-- 🔙 Back Button -->
+    <a href="{% url 'news:article_list' %}" class="btn btn-outline-primary mt-4">← Back to Articles</a>
 </div>
 {% endblock %}

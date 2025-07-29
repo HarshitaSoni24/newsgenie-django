@@ -1,4 +1,4 @@
-# models.py
+
 from django.utils import timezone  
 from django.db import models
 from django.contrib.auth.models import User
@@ -19,6 +19,7 @@ class Article(models.Model):
     summary = models.TextField(blank=True, null=True)
     category = models.ManyToManyField(Category, related_name='articles')
     approved = models.BooleanField(default=False)
+    audio_file = models.FileField(upload_to='news_audio/', blank=True, null=True)  # ✅ NEW FIELD
 
     def approved_status(self):
         return self.approved 
@@ -27,8 +28,6 @@ class Article(models.Model):
 
     def __str__(self):
         return self.title
-    
-
 
 class UserPreference(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
@@ -51,4 +50,4 @@ class SummaryFeedback(models.Model):
             "useful": SummaryFeedback.objects.filter(article=self, useful=True).count(),
             "not_useful": SummaryFeedback.objects.filter(article=self, useful=False).count()
         }
-    
+
