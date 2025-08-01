@@ -1,5 +1,4 @@
-
-from django.utils import timezone  
+from django.utils import timezone
 from django.db import models
 from django.contrib.auth.models import User
 
@@ -19,10 +18,19 @@ class Article(models.Model):
     summary = models.TextField(blank=True, null=True)
     category = models.ManyToManyField(Category, related_name='articles')
     approved = models.BooleanField(default=False)
-    audio_file = models.FileField(upload_to='news_audio/', blank=True, null=True)  # ✅ NEW FIELD
+    audio_file = models.FileField(upload_to='news_audio/', blank=True, null=True)
+
+    @property
+    def total_likes(self):
+        return self.likes.count()
+
+    @property
+    def total_comments(self):
+        return self.comments.count()
+
 
     def approved_status(self):
-        return self.approved 
+        return self.approved
     approved_status.boolean = True
     approved_status.short_description = "Approved"
 
@@ -45,9 +53,58 @@ class SummaryFeedback(models.Model):
     submitted_at = models.DateTimeField(auto_now_add=True)
 
     def feedback_counts(self):
-        from .models import SummaryFeedback
         return {
-            "useful": SummaryFeedback.objects.filter(article=self, useful=True).count(),
-            "not_useful": SummaryFeedback.objects.filter(article=self, useful=False).count()
+            "useful": SummaryFeedback.objects.filter(article=self.article, useful=True).count(),
+            "not_useful": SummaryFeedback.objects.filter(article=self.article, useful=False).count()
         }
 
+class ArticleLike(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    article = models.ForeignKey(Article, on_delete=models.CASCADE, related_name='likes')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('user', 'article')
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.user.username} likes {self.article.title}"
+
+class Bookmark(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    article = models.ForeignKey(Article, on_delete=models.CASCADE, related_name='bookmarks')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('user', 'article')
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.user.username} bookmarked {self.article.title}"
+
+class Comment(models.Model):
+    article = models.ForeignKey(Article, on_delete=models.CASCADE, related_name='comments')
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    content = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    approved = models.BooleanField(default=False)
+
+    class Meta:
+        ordering = ['created_at']
+
+    def __str__(self):
+        return f"Comment by {self.user.username} on {self.article.title[:30]}..."
+
+# NEW MODEL: UserArticleMetrics
+class UserArticleMetrics(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    article = models.ForeignKey(Article, on_delete=models.CASCADE)
+    time_on_page = models.IntegerField(default=0, help_text="Time spent on page in seconds") # Track seconds
+    scroll_depth = models.FloatField(default=0.0, help_text="Max scroll depth as a percentage (0.0 to 1.0)")
+    last_tracked_at = models.DateTimeField(auto_now=True) # Automatically updates on save
+
+    class Meta:
+        unique_together = ('user', 'article') # One metrics record per user-article pair
+
+    def __str__(self):
+        return f"Metrics for {self.user.username} on {self.article.title[:30]}..."

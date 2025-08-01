@@ -1,0 +1,199 @@
+{% extends 'news/base.html' %}
+{% load static %}
+
+{% block title %}My Bookmarks{% endblock %}
+
+{% block content %} {# This is the opening tag #}
+<div class="page-header-section text-center mb-5">
+    <h1 class="page-title-heading">My Bookmarked Articles</h1>
+    <p class="page-subtitle-text">Your saved articles for later reading.</p>
+</div>
+
+{% if bookmarks %}
+<div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4 article-grid">
+    {% for bookmark in bookmarks %}
+    <div class="col">
+        <div class="app-card article-card h-100">
+            <div class="card-body d-flex flex-column">
+                <h5 class="card-title-article">{{ bookmark.article.title }}</h5>
+                <p class="card-meta-info">By {{ bookmark.article.author }} on {{ bookmark.article.published_at|date:"F d, Y" }}</p>
+                <p class="card-text-summary">{{ bookmark.article.summary|default:bookmark.article.content|truncatechars:150 }}</p>
+                <div class="mt-auto article-actions">
+                    <a href="{% url 'news:detail' bookmark.article.pk %}" class="btn app-btn read-more-btn article-card-read-more">Read More <i class="bi bi-arrow-right"></i></a>
+                    <div class="d-flex gap-2 justify-content-end button-group-actions mt-2">
+                        <button class="btn app-btn icon-btn like-btn {% if bookmark.article.is_liked_by_user %}liked{% endif %}" data-article-id="{{ bookmark.article.pk }}" {% if not user.is_authenticated %}disabled title="Login to like" {% endif %}>
+                            <i class="bi {% if bookmark.article.is_liked_by_user %}bi-heart-fill{% else %}bi-heart{% endif %}"></i>
+                            <span class="like-count">{{ bookmark.article.total_likes }}</span>
+                        </button>
+                        {# Bookmark button is always 'bookmarked' on this page #}
+                        <button class="btn app-btn icon-btn bookmark-btn bookmarked" data-article-id="{{ bookmark.article.pk }}" {% if not user.is_authenticated %}disabled title="Login to bookmark" {% endif %}>
+                            <i class="bi bi-bookmark-fill"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div class="card-footer article-card-footer">
+                {% for category in bookmark.article.category.all %}
+                    <span class="badge category-pill-small me-1">{{ category.name }}</span>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<div class="text-center py-5 app-card">
+    <p class="lead">You haven't bookmarked any articles yet.</p>
+    <a href="{% url "news:article_list" %}" class="btn app-btn primary-btn mt-3">Browse Articles</a>
+</div>
+{% endif %}
+
+{% endblock content %} {# This is the closing tag for content block #}
+
+{% block extra_js %}
+{# Re-use the liking/bookmarking JS logic from article_list if needed #}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+        const csrftoken = getCookie('csrftoken');
+
+        function showToast(message, type = 'info') {
+            const toastContainer = document.createElement('div');
+            toastContainer.className = `toast align-items-center text-white bg-${type} border-0 fade show position-fixed bottom-0 end-0 m-3`;
+            toastContainer.setAttribute('role', 'alert');
+            toastContainer.setAttribute('aria-live', 'assertive');
+            toastContainer.setAttribute('aria-atomic', 'true');
+
+            toastContainer.innerHTML = `
+                <div class="d-flex">
+                    <div class="toast-body">${message}</div>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast" aria-label="Close"></button>
+                </div>
+            `;
+            document.body.appendChild(toastContainer);
+
+            const bsToast = new bootstrap.Toast(toastContainer);
+            bsToast.show();
+
+            setTimeout(() => {
+                bsToast.hide();
+                toastContainer.addEventListener('hidden.bs.toast', () => {
+                    toastContainer.remove();
+                });
+            }, 3000);
+        }
+
+        // --- Article Liking Logic ---
+        const likeButtons = document.querySelectorAll('.like-btn');
+        likeButtons.forEach(button => {
+            if (!button.disabled) {
+                button.addEventListener('click', function() {
+                    const articleId = this.dataset.articleId;
+                    const likeIcon = this.querySelector('i');
+                    const likeCountSpan = this.querySelector('.like-count');
+                    
+                    fetch(`/article/${articleId}/like-toggle/`, {
+                        method: 'POST',
+                        headers: {
+                            'X-CSRFToken': csrftoken,
+                            'Content-Type': 'application/json',
+                            'X-Requested-With': 'XMLHttpRequest'
+                        },
+                        body: JSON.stringify({})
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.status === 'success') {
+                            if (data.is_liked) {
+                                likeIcon.classList.remove('bi-heart');
+                                likeIcon.classList.add('bi-heart-fill');
+                                button.classList.add('liked');
+                            } else {
+                                likeIcon.classList.remove('bi-heart-fill');
+                                likeIcon.classList.add('bi-heart');
+                                button.classList.remove('liked');
+                            }
+                            likeCountSpan.textContent = data.total_likes;
+                            showToast(data.message, 'info');
+                        } else {
+                            showToast(data.message || 'Failed to update like status.', 'danger');
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error toggling like:', error);
+                        showToast('An error occurred while toggling like.', 'danger');
+                    });
+                });
+            }
+        });
+
+        // --- Article Bookmarking Logic (modified for bookmarks page) ---
+        const bookmarkButtons = document.querySelectorAll('.bookmark-btn');
+        bookmarkButtons.forEach(button => {
+            if (!button.disabled) {
+                button.addEventListener('click', function() {
+                    const articleId = this.dataset.articleId;
+                    const bookmarkIcon = this.querySelector('i');
+                    
+                    fetch(`/article/${articleId}/bookmark-toggle/`, {
+                        method: 'POST',
+                        headers: {
+                            'X-CSRFToken': csrftoken,
+                            'Content-Type': 'application/json',
+                            'X-Requested-With': 'XMLHttpRequest'
+                        },
+                        body: JSON.stringify({})
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.status === 'success') {
+                            if (data.is_bookmarked) {
+                                bookmarkIcon.classList.remove('bi-bookmark');
+                                bookmarkIcon.classList.add('bi-bookmark-fill');
+                                button.classList.add('bookmarked');
+                            } else {
+                                bookmarkIcon.classList.remove('bi-bookmark-fill');
+                                bookmarkIcon.classList.add('bi-bookmark');
+                                button.classList.remove('bookmarked');
+                                // If unbookmarked on the bookmarks page, remove the card from display
+                                const card = button.closest('.col');
+                                if (card) {
+                                    card.remove();
+                                    // Optional: check if no bookmarks left and show message
+                                    const articleGrid = document.querySelector('.article-grid');
+                                    if (articleGrid && articleGrid.children.length === 0) {
+                                        const noBookmarksMessage = document.createElement('div');
+                                        noBookmarksMessage.className = 'text-center py-5 app-card';
+                                        noBookmarksMessage.innerHTML = '<p class="lead">You haven\'t bookmarked any articles yet.</p><a href="{% url "news:article_list" %}" class="btn app-btn primary-btn mt-3">Browse Articles</a>';
+                                        articleGrid.parentNode.appendChild(noBookmarksMessage);
+                                    }
+                                }
+                            }
+                            showToast(data.message, 'info');
+                        } else {
+                            showToast(data.message || 'Failed to update bookmark status.', 'danger');
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error toggling bookmark:', error);
+                        showToast('An error occurred while toggling bookmark.', 'danger');
+                    });
+                });
+            }
+        });
+    });
+</script>
+{% endblock %}

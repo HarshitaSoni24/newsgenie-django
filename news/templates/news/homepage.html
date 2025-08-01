@@ -1,0 +1,26 @@
+{% extends 'news/base.html' %}
+{% load static %}
+
+{% block title %}Welcome to NewsGenie AI{% endblock %}
+
+{% block content %}
+<div class="homepage-container text-center app-card mt-5">
+    <h1 class="homepage-title">Welcome to NewsGenie AI!</h1>
+    <p class="homepage-subtitle">Your personalized portal to the world's news, summarized and narrated by AI.</p>
+    <div class="homepage-features mt-4">
+        <p><i class="bi bi-robot-fill me-2"></i> Get instant summaries of complex articles.</p>
+        <p><i class="bi bi-headphones me-2"></i> Listen to summaries on the go.</p>
+        <p><i class="bi bi-person-lines-fill me-2"></i> Enjoy personalized recommendations.</p>
+        <p><i class="bi bi-heart-fill me-2"></i> Like & bookmark your favorite stories.</p>
+    </div>
+    <div class="homepage-action-area mt-5">
+        <a href="{% url 'news:article_list' %}" class="btn app-btn primary-btn homepage-cta-btn">
+            Explore Latest Articles <i class="bi bi-arrow-right-circle-fill ms-2"></i>
+        </a>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+{# No specific JS for homepage yet, but keeping the block #}
+{% endblock %}

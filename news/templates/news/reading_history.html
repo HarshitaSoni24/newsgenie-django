@@ -1,21 +1,37 @@
 {% extends 'news/base.html' %}
-{% block title %}Reading History{% endblock %}
+{% load static %}
+{% load humanize %}
+
+{% block title %}My Reading History{% endblock %}
 
 {% block content %}
-<div class="container mt-5">
-    <h2 class="mb-4">📖 Your Reading History</h2>
-    <ul class="list-group">
-        {% for record in history %}
-            <li class="list-group-item d-flex justify-content-between align-items-center">
-                <div>
-                    <strong>{{ record.article.title }}</strong><br>
-                    <small class="text-muted">Read at {{ record.read_at|date:"F d, Y H:i" }}</small>
+<div class="reading-history-container app-card text-center mt-5">
+    <div class="page-header-section">
+        <h1 class="page-title-heading">Your Reading History</h1>
+        <p class="page-subtitle-text">A list of all the articles you have read.</p>
+    </div>
+
+    {% if history %}
+    <div class="mt-4">
+        <ul class="list-group list-group-flush reading-history-list">
+            {% for entry in history %}
+            <li class="list-group-item d-flex justify-content-between align-items-center reading-history-item">
+                <div class="text-start flex-grow-1">
+                    <a href="{% url 'news:detail' entry.article.pk %}" class="reading-history-link">{{ entry.article.title }}</a>
+                    <p class="small text-muted mb-0">Read on {{ entry.read_at|naturalday }} at {{ entry.read_at|time:"h:i A" }}</p>
                 </div>
-                <a href="{% url 'news:detail' record.article.pk %}" class="btn btn-outline-primary btn-sm">Read Again</a>
+                <div class="ms-3">
+                    <a href="{% url 'news:detail' entry.article.pk %}" class="btn app-btn outline-btn read-again-btn">Read Again</a>
+                </div>
             </li>
-        {% empty %}
-            <li class="list-group-item">You haven’t read any articles yet.</li>
-        {% endfor %}
-    </ul>
+            {% endfor %}
+        </ul>
+    </div>
+    {% else %}
+    <div class="text-center py-5">
+        <p class="lead">You haven't read any articles yet.</p>
+        <a href="{% url 'news:article_list' %}" class="btn app-btn primary-btn mt-3">Explore Articles</a>
+    </div>
+    {% endif %}
 </div>
 {% endblock %}

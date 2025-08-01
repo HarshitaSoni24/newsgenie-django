@@ -1,58 +1,640 @@
 {% extends 'news/base.html' %}
+{% load static %}
+{% load humanize %}
 
 {% block title %}{{ article.title }}{% endblock %}
 
 {% block content %}
-<div class="container mt-4">
-    <!-- 📰 Title & Info -->
-    <h1 class="mb-3">{{ article.title }}</h1>
-    <p class="text-muted">By {{ article.author }} on {{ article.published_at|date:"F d, Y" }}</p>
+<div class="container app-main-container mt-5"> {# Main wrapper for consistent styling #}
+    <div class="article-header-section text-center mb-5">
+        <h1 class="article-title-heading">{{ article.title }}</h1>
+        <p class="article-meta-text">By {{ article.author }} on {{ article.published_at|date:"F d, Y" }}</p>
 
-    <!-- 🏷️ Categories -->
-    {% for category in article.categories.all %}
-        <span class="badge bg-primary me-1">{{ category.name }}</span>
-    {% endfor %}
-
-    <!-- 📌 Summary Section -->
-    {% if article.summary %}
-        <h4 class="mt-4">📝 Summary</h4>
-        <p class="text-body">{{ article.summary|linebreaksbr }}</p>
-    {% endif %}
-
-    {% if article.audio_file %}
-    <div class="mt-4">
-        <h5>🎧 Listen to Summary:</h5>
-        <audio controls style="width: 100%;">
-            <source src="{{ article.audio_file.url }}" type="audio/mpeg">
-            Your browser does not support the audio element.
-        </audio>
-    </div>
-    {% endif %}
-
-
-    <!-- 📊 Feedback Stats -->
-    {% if feedback_total > 0 %}
-        <div class="alert alert-info mt-3">
-            <strong>{{ feedback_useful }}</strong> out of <strong>{{ feedback_total }}</strong> users found this summary useful.
+        <div class="category-badges mt-3">
+            {% for category in article.category.all %}
+                <span class="badge category-pill me-2">{{ category.name }}</span>
+            {% endfor %}
         </div>
-    {% endif %}
+    </div>
 
-    <!-- 📈 Feedback Count Section -->
-    {% if article.feedback_counts %}
-        {% with counts=article.feedback_counts %}
-            <div class="mt-3">
-                <p class="fw-semibold">Summary Feedback:</p>
-                <p>👍 Useful: {{ counts.useful|default:"0" }} | 👎 Not Useful: {{ counts.not_useful|default:"0" }}</p>
+    <div class="row justify-content-center mb-5">
+        <div class="col-lg-10 col-md-12">
+            <div class="action-buttons-wrapper text-center mb-4">
+                {# Generate Summary button always visible if content exists #}
+                {% if article.content %}
+                    <button id="generateSummaryBtn" class="btn app-btn primary-btn">
+                        <i class="bi bi-robot me-2"></i> {% if article.summary %}View Summary{% else %}Generate Summary{% endif %}
+                    </button>
+                {% endif %}
+                {# Generate Audio button is always visible if summary exists #}
+                {% if article.summary %}
+                    <button id="generateAudioBtn" class="btn app-btn secondary-btn">
+                        <i class="bi bi-megaphone me-2"></i> {% if article.audio_file %}Play Audio{% else %}Generate Audio{% endif %}
+                    </button>
+                {% endif %}
+                {# Like Button for detail page #}
+                <button class="btn app-btn icon-btn like-btn {% if is_liked_by_user %}liked{% endif %}" data-article-id="{{ article.pk }}" {% if not user.is_authenticated %}disabled title="Login to like" {% endif %}>
+                    <i class="bi {% if is_liked_by_user %}bi-heart-fill{% else %}bi-heart{% endif %}"></i>
+                    <span class="like-count">{{ article.total_likes }}</span>
+                </button>
+                {# Bookmark Button #}
+                <button class="btn app-btn icon-btn bookmark-btn {% if is_bookmarked_by_user %}bookmarked{% endif %}" data-article-id="{{ article.pk }}" {% if not user.is_authenticated %}disabled title="Login to bookmark" {% endif %}>
+                    <i class="bi {% if is_bookmarked_by_user %}bi-bookmark-fill{% else %}bi-bookmark{% endif %}"></i>
+                </button>
             </div>
-        {% endwith %}
-    {% endif %}
 
-    <hr>
+            <div class="summary-options-wrapper app-card mb-4">
+                <h5 class="mb-3">Summary Length:</h5>
+                <div class="d-flex justify-content-center gap-3">
+                    <div class="form-check form-check-inline custom-radio">
+                        <input class="form-check-input" type="radio" name="summaryLength" id="shortSummary" value="3" checked>
+                        <label class="form-check-label" for="shortSummary">Short (3 sentences)</label>
+                    </div>
+                    <div class="form-check form-check-inline custom-radio">
+                        <input class="form-check-input" type="radio" name="summaryLength" id="mediumSummary" value="5">
+                        <label class="form-check-label" for="mediumSummary">Medium (5 sentences)</label>
+                    </div>
+                    <div class="form-check form-check-inline custom-radio">
+                        <input class="form-check-input" type="radio" name="summaryLength" id="longSummary" value="7">
+                        <label class="form-check-label" for="longSummary">Long (7 sentences)</label>
+                    </div>
+                </div>
+            </div>
 
-    <!-- 📃 Full Article Content -->
-    <div class="lead">{{ article.content|linebreaksbr }}</div>
+            <div id="summarySection" class="app-card summary-card mb-4" style="display:none;">
+                <h4 class="card-heading"><i class="bi bi-file-earmark-text-fill me-2"></i> Article Summary</h4>
+                <div id="articleSummaryText" class="card-body-text summary-content">
+                </div>
+                {% if article.summary %}<div id="preExistingSummary" style="display: none;">{{ article.summary|linebreaksbr }}</div>{% endif %}
+            </div>
 
-    <!-- 🔙 Back Button -->
-    <a href="{% url 'news:article_list' %}" class="btn btn-outline-primary mt-4">← Back to Articles</a>
+            <div id="audioSection" class="app-card audio-card mb-4" style="display:none;">
+                <h5 class="card-heading"><i class="bi bi-headphones me-2"></i> Listen to Summary</h5>
+                <audio id="summaryAudioPlayer" controls class="w-100 audio-player">
+                    {% if article.audio_file %}
+                        <source src="{{ article.audio_file.url }}" type="audio/mpeg">
+                    {% endif %}
+                    Your browser does not support the audio element.
+                </audio>
+            </div>
+
+            <hr class="section-divider my-5">
+
+            <div class="app-card full-article-content-card mb-4">
+                <h3 class="card-heading"><i class="bi bi-book-fill me-2"></i> Full Article</h3>
+                <div class="card-body-text full-article-text">{{ article.content|linebreaksbr }}</div>
+            </div>
+
+            {# Feedback Section #}
+            <div class="app-card feedback-card mb-4">
+                <h4 class="card-heading"><i class="bi bi-star-fill me-2"></i> Was this summary useful?</h4>
+                {% if user.is_authenticated %}
+                    {% if feedback_submitted %}
+                        <div class="alert app-alert alert-success mt-3 feedback-message">Thank you for your feedback!</div>
+                    {% elif user_feedback_exists %}
+                        <div class="alert app-alert alert-info mt-3 feedback-message">You have already submitted feedback for this summary.</div>
+                    {% else %}
+                        <form method="post" id="summaryFeedbackForm" class="feedback-form">
+                            {% csrf_token %}
+                            <input type="hidden" name="feedback_submit" value="1">
+                            <div class="form-group mb-3 radio-selection">
+                                <div class="d-flex gap-4">
+                                    {% for radio in form.useful %}
+                                        <div class="form-check form-check-inline custom-radio">
+                                            {{ radio.tag }}
+                                            <label class="form-check-label" for="{{ radio.id_for_label }}">
+                                                {{ radio.choice_label }}
+                                            </label>
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                                {% if form.useful.errors %}
+                                    <div class="invalid-feedback d-block">{{ form.useful.errors }}</div>
+                                {% endif %}
+                            </div>
+                            <button type="submit" class="btn app-btn submit-feedback-btn">Post Comment</button>
+                        </form>
+                    {% endif %}
+                {% else %}
+                    <div class="alert app-alert alert-warning mt-3">Please <a href="{% url 'users:login' %}">login</a> to provide feedback.</div>
+                {% endif %}
+
+                <div class="mt-4 feedback-stats-display">
+                    <p class="stats-text mb-0">
+                        <span class="text-success"><i class="bi bi-hand-thumbs-up-fill me-1"></i> Useful: <span id="usefulCount" class="stat-value">{{ feedback_useful }}</span></span>
+                        <span class="text-danger ms-3"><i class="bi bi-hand-thumbs-down-fill me-1"></i> Not Useful: <span id="notUsefulCount" class="stat-value">{{ feedback_not_useful }}</span></span>
+                    </p>
+                </div>
+            </div>
+
+            <hr class="section-divider my-5">
+
+            <div class="app-card comments-section-card mb-4">
+                <h4 class="card-heading"><i class="bi bi-chat-left-text-fill me-2"></i> Comments ({{ comments.count }})</h4>
+
+                {% if user.is_authenticated %}
+                    <div class="comment-form-wrapper mb-4">
+                        <h5 class="mb-3">Leave a Comment</h5>
+                        <form method="post">
+                            {% csrf_token %}
+                            <input type="hidden" name="comment_submit" value="1">
+                            <div class="mb-3">
+                                {{ comment_form.content.errors }}
+                                {{ comment_form.content }}
+                            </div>
+                            <button type="submit" class="btn app-btn primary-btn submit-comment-btn">Post Comment</button>
+                        </form>
+                    </div>
+                {% else %}
+                    <div class="alert app-alert alert-info mb-4">Please <a href="{% url 'users:login' %}">login</a> to leave a comment.</div>
+                {% endif %}
+
+
+                {% if comments %}
+                    <div class="existing-comments">
+                        {% for comment in comments %}
+                            <div class="comment-item p-3 mb-3 border rounded">
+                                <p class="comment-meta mb-1">
+                                    <strong>{{ comment.user.username }}</strong>
+                                    <span class="text-muted small ms-2">{% if comment.created_at %}{{ comment.created_at|naturaltime }}{% endif %}</span>
+                                </p>
+                                <p class="comment-content mb-0">{{ comment.content|linebreaksbr }}</p>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <p class="text-muted text-center">No comments yet. Be the first to share your thoughts!</p>
+                {% endif %}
+            </div>
+
+
+            <div class="text-center mt-5 mb-5">
+                <a href="{% url 'news:article_list' %}" class="btn app-btn outline-btn back-to-articles-btn">
+                    <i class="bi bi-arrow-left-circle-fill me-2"></i> Back to Articles
+                </a>
+            </div>
+        </div>
+    </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // NEW: JavaScript variables for summary and audio availability
+    const articleHasSummaryInitial = {% if article.summary %}true{% else %}false{% endif %};
+    const articleHasAudioInitial = {% if article.audio_file %}true{% else %}false{% endif %};
+    const preExistingSummaryContent = document.getElementById('preExistingSummary') ? document.getElementById('preExistingSummary').innerHTML : '';
+
+    document.addEventListener('DOMContentLoaded', function() {
+        // --- NEW: DECLARATIONS FOR READING METRICS TRACKING ---
+        let timeOnPage = 0; // Declared with 'let'
+        let timerInterval;  // Declared with 'let'
+        const sendMetricsInterval = 10 * 1000; // Declared with 'const'
+        let maxScrollDepth = 0.0; // Declared with 'let'
+        const fullArticleContent = document.querySelector('.full-article-content-card'); // Declared with 'const'
+        // --- END NEW DECLARATIONS ---
+
+
+        const articleId = {{ article.pk }};
+        const generateSummaryBtn = document.getElementById('generateSummaryBtn');
+        const generateAudioBtn = document.getElementById('generateAudioBtn');
+        const summarySection = document.getElementById('summarySection');
+        const articleSummaryText = document.getElementById('articleSummaryText');
+        const audioSection = document.getElementById('audioSection');
+        const summaryAudioPlayer = document.getElementById('summaryAudioPlayer');
+        const actionButtonsContainer = document.querySelector('.action-buttons-wrapper');
+        
+
+        const usefulCountElem = document.getElementById('usefulCount');
+        const notUsefulCountElem = document.getElementById('notUsefulCount');
+        const summaryFeedbackForm = document.getElementById('summaryFeedbackForm');
+
+        const summaryLengthRadios = document.querySelectorAll('input[name="summaryLength"]');
+
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+        const csrftoken = getCookie('csrftoken');
+
+        function showToast(message, type = 'info') {
+            const toastContainer = document.createElement('div');
+            toastContainer.className = `toast align-items-center text-white bg-${type} border-0 fade show position-fixed bottom-0 end-0 m-3`;
+            toastContainer.setAttribute('role', 'alert');
+            toastContainer.setAttribute('aria-live', 'assertive');
+            toastContainer.setAttribute('aria-atomic', 'true');
+
+            toastContainer.innerHTML = `
+                <div class="d-flex">
+                    <div class="toast-body">${message}</div>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast" aria-label="Close"></button>
+                </div>
+            `;
+            document.body.appendChild(toastContainer);
+
+            const bsToast = new bootstrap.Toast(toastContainer);
+            bsToast.show();
+
+            setTimeout(() => {
+                bsToast.hide();
+                toastContainer.addEventListener('hidden.bs.toast', () => {
+                    toastContainer.remove();
+                });
+            }, 3000);
+        }
+
+        // --- Initial State Adjustments on Page Load ---
+
+        {% if article.audio_file %}
+            if (summaryAudioPlayer) {
+                summaryAudioPlayer.src = "{{ article.audio_file.url }}";
+                summaryAudioPlayer.load();
+            }
+        {% endif %}
+
+        summarySection.style.display = 'none';
+
+
+        // Handle Generate Summary Button Click
+        if (generateSummaryBtn) {
+            generateSummaryBtn.addEventListener('click', function() {
+                const btn = this;
+                const originalBtnHtml = btn.innerHTML;
+
+                let selectedSummaryLength = 3;
+                for (const radio of summaryLengthRadios) {
+                    if (radio.checked) {
+                        selectedSummaryLength = radio.value;
+                        break;
+                    }
+                }
+
+                if (articleHasSummaryInitial && preExistingSummaryContent.trim().length > 0) {
+                    if (summarySection.style.display === 'none') {
+                        articleSummaryText.innerHTML = preExistingSummaryContent;
+                        summarySection.style.display = 'block';
+                        btn.innerHTML = '<i class="bi bi-eye-slash me-2"></i> Hide Summary';
+                    } else {
+                        summarySection.style.display = 'none';
+                        btn.innerHTML = '<i class="bi bi-eye me-2"></i> View Summary';
+                    }
+                    return;
+                }
+                
+                btn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Generating...';
+                btn.disabled = true;
+
+                fetch(`/article/${articleId}/generate-summary/`, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': csrftoken,
+                        'Content-Type': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    body: JSON.stringify({ sentence_limit: selectedSummaryLength })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        articleSummaryText.innerHTML = data.summary.replace(/\n/g, '<br>');
+                        summarySection.style.display = 'block';
+                        btn.innerHTML = '<i class="bi bi-eye me-2"></i> View Summary';
+
+                        let currentGenerateAudioBtn = document.getElementById('generateAudioBtn');
+                        if (currentGenerateAudioBtn && !articleHasAudioInitial) {
+                            currentGenerateAudioBtn.style.display = 'block';
+                        } else if (!currentGenerateAudioBtn) {
+                            currentGenerateAudioBtn = document.createElement('button');
+                            currentGenerateAudioBtn.id = 'generateAudioBtn';
+                            currentGenerateAudioBtn.className = 'btn app-btn secondary-btn';
+                            currentGenerateAudioBtn.innerHTML = '<i class="bi bi-megaphone me-2"></i> Generate Audio';
+                            actionButtonsContainer.appendChild(currentGenerateAudioBtn);
+                        }
+                        if (currentGenerateAudioBtn) {
+                            currentGenerateAudioBtn.addEventListener('click', handleGenerateAudio);
+                        }
+
+                        showToast('Summary generated successfully!', 'success');
+                    } else {
+                        showToast(data.message || 'Failed to generate summary.', 'danger');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    showToast('An error occurred while generating summary.', 'danger');
+                })
+                .finally(() => {
+                    btn.disabled = false;
+                    if (data && data.status !== 'success') {
+                        btn.innerHTML = originalBtnHtml;
+                    }
+                });
+            });
+        }
+
+
+        // Function to handle Generate Audio Button Click
+        if (generateAudioBtn) {
+            generateAudioBtn.addEventListener('click', function() {
+                const btn = this;
+                const originalBtnHtml = btn.innerHTML;
+
+                if (articleHasAudioInitial && summaryAudioPlayer.src && summaryAudioPlayer.src !== window.location.href + '#') {
+                    if (audioSection.style.display === 'none') {
+                        audioSection.style.display = 'block';
+                        summaryAudioPlayer.play();
+                        btn.innerHTML = '<i class="bi bi-volume-mute-fill me-2"></i> Hide Audio';
+                        showToast('Playing existing audio summary!', 'info');
+                    } else {
+                        summaryAudioPlayer.pause();
+                        audioSection.style.display = 'none';
+                        btn.innerHTML = '<i class="bi bi-megaphone me-2"></i> Play Audio';
+                    }
+                    return;
+                }
+
+                btn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Generating...';
+                btn.disabled = true;
+
+                fetch(`/article/${articleId}/generate-audio/`, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': csrftoken,
+                        'Content-Type': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    body: JSON.stringify({})
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        summaryAudioPlayer.src = data.audio_url;
+                        summaryAudioPlayer.load();
+                        summaryAudioPlayer.play();
+                        audioSection.style.display = 'block';
+                        btn.innerHTML = '<i class="bi bi-volume-mute-fill me-2"></i> Hide Audio';
+                        showToast('Audio generated and playing!', 'success');
+                    } else {
+                        showToast(data.message || 'Failed to generate audio.', 'danger');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    showToast('An error occurred while generating audio.', 'danger');
+                })
+                .finally(() => {
+                    btn.disabled = false;
+                    if (!summaryAudioPlayer.src || (data && data.status !== 'success')) {
+                         btn.innerHTML = originalBtnHtml;
+                    }
+                });
+            });
+        }
+
+
+        // --- Article Liking Logic (repeated from article_list for standalone use if needed) ---
+        const likeButtons = document.querySelectorAll('.like-btn');
+        likeButtons.forEach(button => {
+            if (!button.disabled) {
+                button.addEventListener('click', function() {
+                    const currentArticleId = this.dataset.articleId;
+                    const likeIcon = this.querySelector('i');
+                    const likeCountSpan = this.querySelector('.like-count');
+                    
+                    fetch(`/article/${currentArticleId}/like-toggle/`, {
+                        method: 'POST',
+                        headers: {
+                            'X-CSRFToken': csrftoken,
+                            'Content-Type': 'application/json',
+                            'X-Requested-With': 'XMLHttpRequest'
+                        },
+                        body: JSON.stringify({})
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.status === 'success') {
+                            if (data.is_liked) {
+                                likeIcon.classList.remove('bi-heart');
+                                likeIcon.classList.add('bi-heart-fill');
+                                button.classList.add('liked');
+                            } else {
+                                likeIcon.classList.remove('bi-heart-fill');
+                                likeIcon.classList.add('bi-heart');
+                                button.classList.remove('liked');
+                            }
+                            likeCountSpan.textContent = data.total_likes;
+                            showToast(data.message, 'info');
+                        } else {
+                            showToast(data.message || 'Failed to update like status.', 'danger');
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error toggling like:', error);
+                        showToast('An error occurred while toggling like.', 'danger');
+                    });
+                });
+            }
+        });
+
+
+        // --- Article Bookmarking Logic (copied from article_list for standalone use if needed) ---
+        const bookmarkButtons = document.querySelectorAll('.bookmark-btn');
+        bookmarkButtons.forEach(button => {
+            if (!button.disabled) {
+                button.addEventListener('click', function() {
+                    const currentArticleId = this.dataset.articleId;
+                    const bookmarkIcon = this.querySelector('i');
+                    
+                    fetch(`/article/${currentArticleId}/bookmark-toggle/`, {
+                        method: 'POST',
+                        headers: {
+                            'X-CSRFToken': csrftoken,
+                            'Content-Type': 'application/json',
+                            'X-Requested-With': 'XMLHttpRequest'
+                        },
+                        body: JSON.stringify({})
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.status === 'success') {
+                            if (data.is_bookmarked) {
+                                bookmarkIcon.classList.remove('bi-bookmark');
+                                bookmarkIcon.classList.add('bi-bookmark-fill');
+                                button.classList.add('bookmarked');
+                            } else {
+                                bookmarkIcon.classList.remove('bi-bookmark-fill');
+                                bookmarkIcon.classList.add('bi-bookmark');
+                                button.classList.remove('bookmarked');
+                            }
+                            showToast(data.message, 'info');
+                        } else {
+                            showToast(data.message || 'Failed to update bookmark status.', 'danger');
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error toggling bookmark:', error);
+                        showToast('An error occurred while toggling bookmark.', 'danger');
+                    });
+                });
+            }
+        });
+
+
+        // Handle Summary Feedback Form Submission (AJAX for dynamic update of counts)
+        if (summaryFeedbackForm) {
+            summaryFeedbackForm.addEventListener('submit', function(event) {
+                event.preventDefault();
+
+                const formData = new FormData(summaryFeedbackForm);
+
+                const submitBtn = summaryFeedbackForm.querySelector('button[type="submit"]');
+                const originalBtnText = submitBtn.innerHTML;
+                submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Submitting...';
+                submitBtn.disabled = true;
+
+                fetch(summaryFeedbackForm.action, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': csrftoken,
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    body: formData
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        return response.text().then(text => { throw new Error(text) });
+                    }
+                    return response.text();
+                })
+                .then(text => {
+                    const parser = new DOMParser();
+                    const doc = parser.parseFromString(text, 'text/html');
+                    const newUsefulCount = doc.getElementById('usefulCount').textContent;
+                    const newNotUsefulCount = doc.getElementById('notUsefulCount').textContent;
+
+                    usefulCountElem.textContent = newUsefulCount;
+                    notUsefulCountElem.textContent = newNotUsefulCount;
+
+                    const oldFeedbackMessage = document.querySelector('.feedback-message');
+                    if (oldFeedbackMessage) {
+                        oldFeedbackMessage.remove();
+                    }
+                    const feedbackMessageDiv = document.createElement('div');
+                    feedbackMessageDiv.className = 'alert app-alert alert-success mt-3 feedback-message';
+                    feedbackMessageDiv.textContent = 'Thank you for your feedback!';
+                    summaryFeedbackForm.parentNode.insertBefore(feedbackMessageDiv, summaryFeedbackForm);
+                    summaryFeedbackForm.style.display = 'none';
+
+                    showToast('Feedback submitted successfully!', 'success');
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    showToast('An error occurred while submitting feedback.', 'danger');
+                })
+                .finally(() => {
+                    submitBtn.innerHTML = originalBtnText;
+                    submitBtn.disabled = false;
+                });
+            });
+        }
+
+        // Generic Toast/Notification Function
+        function showToast(message, type = 'info') {
+            const toastContainer = document.createElement('div');
+            toastContainer.className = `toast align-items-center text-white bg-${type} border-0 fade show position-fixed bottom-0 end-0 m-3`;
+            toastContainer.setAttribute('role', 'alert');
+            toastContainer.setAttribute('aria-live', 'assertive');
+            toastContainer.setAttribute('aria-atomic', 'true');
+
+            toastContainer.innerHTML = `
+                <div class="d-flex">
+                    <div class="toast-body">${message}</div>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast" aria-label="Close"></button>
+                </div>
+            `;
+            document.body.appendChild(toastContainer);
+
+            const bsToast = new bootstrap.Toast(toastContainer);
+            bsToast.show();
+
+            setTimeout(() => {
+                bsToast.hide();
+                toastContainer.addEventListener('hidden.bs.toast', () => {
+                    toastContainer.remove();
+                });
+            }, 3000);
+        }
+
+        // --- Reading Metrics Tracking ---
+        {% if user.is_authenticated %}
+            timerInterval = setInterval(() => {
+                timeOnPage++;
+            }, 1000);
+
+            window.addEventListener('scroll', function() {
+                if (fullArticleContent) {
+                    const scrollHeight = fullArticleContent.scrollHeight;
+                    const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+                    const clientHeight = document.documentElement.clientHeight;
+                    
+                    if (scrollHeight > clientHeight) {
+                        const currentScrollPercentage = Math.min(1.0, (scrollTop + clientHeight) / scrollHeight);
+                        if (currentScrollPercentage > maxScrollDepth) {
+                            maxScrollDepth = currentScrollPercentage;
+                        }
+                    } else {
+                        maxScrollDepth = 1.0;
+                    }
+                }
+            });
+
+            window.addEventListener('beforeunload', sendArticleMetrics);
+            window.addEventListener('visibilitychange', () => {
+                if (document.visibilityState === 'hidden') {
+                    sendArticleMetrics();
+                }
+            });
+
+            setInterval(sendArticleMetrics, sendMetricsInterval);
+
+
+            function sendArticleMetrics() {
+                const data = {
+                    article_id: articleId,
+                    time_on_page: timeOnPage,
+                    scroll_depth: maxScrollDepth
+                };
+
+                fetch('/track-metrics/', {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': csrftoken,
+                        'Content-Type': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    body: JSON.stringify(data)
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        console.error('Failed to send metrics:', response.statusText);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error sending metrics:', error);
+                });
+            }
+        {% endif %}
+
+    });
+</script>
 {% endblock %}

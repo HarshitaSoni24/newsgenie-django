@@ -1,17 +1,40 @@
 {% extends 'news/base.html' %}
+{% load static %}
+
 {% block title %}Set Your Preferences{% endblock %}
 
 {% block content %}
-<div class="container mt-5">
-    <div class="card shadow-sm">
-        <div class="card-body">
-            <h3 class="card-title mb-4">🛠️ Set Your Preferences</h3>
-            <form method="POST">
-                {% csrf_token %}
-                {{ form.as_p }}
-                <button type="submit" class="btn btn-primary">💾 Save Preferences</button>
-            </form>
-        </div>
+<div class="user-preferences-container text-center app-card mt-5">
+    <div class="page-header-section">
+        <h1 class="page-title-heading">Set Your Preferences</h1>
+        <p class="page-subtitle-text">Choose your favorite categories to get personalized recommendations.</p>
     </div>
+
+    <form method="post" class="mt-4">
+        {% csrf_token %}
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                <div class="form-group mb-4">
+                    <label class="form-label-custom mb-3">{{ form.preferred_categories.label }}:</label>
+                    <div class="row">
+                        {% for checkbox in form.preferred_categories %}
+                        <div class="col-md-6 col-lg-4 d-flex align-items-center mb-2">
+                            <div class="form-check custom-checkbox">
+                                {{ checkbox.tag }}
+                                <label class="form-check-label" for="{{ checkbox.id_for_label }}">
+                                    {{ checkbox.choice_label }}
+                                </label>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="mt-4">
+            <button type="submit" class="btn app-btn primary-btn"><i class="bi bi-save me-2"></i> Save Preferences</button>
+        </div>
+    </form>
 </div>
 {% endblock %}
