@@ -12,68 +12,51 @@
 
 <div class="advanced-filter-sort-container app-card mb-5">
     <form method="GET" action="{% url 'news:article_list' %}" class="filter-sort-form">
-        <h4 class="form-section-title"><i class="bi bi-funnel me-2"></i> Filter & Sort Articles</h4>
-
-        <div class="form-group mb-3">
-            <label for="categoryFilter" class="form-label-custom">Category:</label>
-            <div class="category-filter-pills-form">
-                {# FIX: Removed 'request' from url_replace calls #}
-                <a href="?{% url_replace category='All' %}" class="category-filter-pill {% if current_category == 'All' %}active{% endif %}">All</a>
-                {% for cat in categories %}
-                    <a href="?{% url_replace category=cat.name %}" class="category-filter-pill {% if current_category == cat.name %}active{% endif %}">{{ cat.name }}</a>
-                {% endfor %}
+        <div class="row g-3">
+            <div class="col-12">
+                <label for="searchInput" class="form-label-custom">Keyword Search:</label>
+                <div class="input-group">
+                    <span class="input-group-text"><i class="bi bi-search"></i></span>
+                    <input type="text" name="q" id="searchInput" class="form-control app-input-field" placeholder="Search by title or content..." value="{{ search_query }}">
+                </div>
             </div>
         </div>
 
-        <div class="row g-3 mb-3">
-            <div class="col-md-6">
-                <label for="searchInput" class="form-label-custom">Keyword Search:</label>
-                <div class="input-group">
-                    <input type="text" name="q" id="searchInput" class="form-control app-input-field" placeholder="Search keywords..." value="{{ search_query }}">
+        <div class="collapse" id="additionalFilters">
+            <hr class="my-4 section-divider">
+            
+            <div class="form-group mb-3">
+                <label for="categoryFilter" class="form-label-custom">Category:</label>
+                <div class="category-filter-pills-form">
+                    <a href="?{% url_replace category='All' %}" class="category-filter-pill {% if current_category == 'All' %}active{% endif %}">All</a>
+                    {% for cat in categories %}
+                        <a href="?{% url_replace category=cat.name %}" class="category-filter-pill {% if current_category == cat.name %}active{% endif %}">{{ cat.name }}</a>
+                    {% endfor %}
                 </div>
             </div>
 
-            <div class="col-md-6">
-                <label for="sortBy" class="form-label-custom">Sort By:</label>
-                <select name="sort_by" id="sortBy" class="form-select app-input-field">
-                    <option value="-published_at" {% if sort_by == '-published_at' %}selected{% endif %}>Most Recent</option>
-                    <option value="published_at" {% if sort_by == 'published_at' %}selected{% endif %}>Oldest</option>
-                    <option value="most_popular_likes" {% if sort_by == 'most_popular_likes' %}selected{% endif %}>Most Popular (Likes)</option>
-                    <option value="most_popular_comments" {% if sort_by == 'most_popular_comments' %}selected{% endif %}>Most Popular (Comments)</option>
-                </select>
+            <div class="row g-3 mb-3">
+                <div class="col-md-12">
+                    <label for="sortBy" class="form-label-custom">Sort By:</label>
+                    <select name="sort_by" id="sortBy" class="form-select app-input-field">
+                        <option value="-published_at" {% if sort_by == '-published_at' %}selected{% endif %}>Most Recent</option>
+                        <option value="published_at" {% if sort_by == 'published_at' %}selected{% endif %}>Oldest</option>
+                        <option value="most_popular_likes" {% if sort_by == 'most_popular_likes' %}selected{% endif %}>Most Popular (Likes)</option>
+                        <option value="most_popular_comments" {% if sort_by == 'most_popular_comments' %}selected{% endif %}>Most Popular (Comments)</option>
+                    </select>
+                </div>
             </div>
         </div>
 
-        <div class="row g-3 mb-4">
-            <div class="col-md-6">
-                <label for="startDate" class="form-label-custom">Date Range (From):</label>
-                <input type="date" name="start_date" id="startDate" class="form-control app-input-field" value="{{ start_date }}">
-            </div>
-            <div class="col-md-6">
-                <label for="endDate" class="form-label-custom">Date Range (To):</label>
-                <input type="date" name="end_date" id="endDate" class="form-control app-input-field" value="{{ end_date }}">
-            </div>
-        </div>
-
-        <div class="row g-3 mb-4">
-            <div class="col-md-6">
-                <label for="minLikes" class="form-label-custom">Min. Likes:</label>
-                <input type="number" name="min_likes" id="minLikes" class="form-control app-input-field" placeholder="e.g., 5" value="{{ min_likes }}">
-            </div>
-            <div class="col-md-6">
-                <label for="minComments" class="form-label-custom">Min. Comments:</label>
-                <input type="number" name="min_comments" id="minComments" class="form-control app-input-field" placeholder="e.g., 3" value="{{ min_comments }}">
-            </div>
-        </div>
-
-        <div class="text-center">
-            <button type="submit" class="btn app-btn primary-btn filter-submit-btn"><i class="bi bi-search me-2"></i> Apply Filters</button>
-            <a href="{% url 'news:article_list' %}" class="btn app-btn outline-btn ms-2"><i class="bi bi-x-circle me-2"></i> Clear Filters</a>
+        <div class="text-center mt-4 d-flex flex-wrap justify-content-center gap-2">
+            <button type="submit" class="btn app-btn primary-btn"><i class="bi bi-search me-2"></i> Apply Filters</button>
+            <button class="btn app-btn secondary-btn" type="button" data-bs-toggle="collapse" data-bs-target="#additionalFilters" aria-expanded="false" aria-controls="additionalFilters">
+                <i class="bi bi-sliders me-2"></i> Additional Filters
+            </button>
+            <a href="{% url 'news:article_list' %}" class="btn app-btn outline-btn"><i class="bi bi-x-circle me-2"></i> Clear Filters</a>
         </div>
     </form>
 </div>
-{# url_replace is defined in news/templatetags/custom_filters.py #}
-
 
 <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4 article-grid">
     {% for article in articles %}
@@ -83,9 +66,10 @@
                 <h5 class="card-title-article">{{ article.title }}</h5>
                 <p class="card-meta-info">By {{ article.author }} on {{ article.published_at|date:"F d, Y" }}</p>
                 <p class="card-text-summary">{{ article.summary|default:article.content|truncatechars:150 }}</p>
-                <div class="mt-auto article-actions">
-                    <a href="{% url 'news:detail' article.pk %}" class="btn app-btn read-more-btn article-card-read-more">Read More <i class="bi bi-arrow-right"></i></a>
-                    <div class="d-flex gap-2 justify-content-end button-group-actions mt-2">
+                
+                <div class="article-actions">
+                    <a href="{% url 'news:detail' article.pk %}" class="btn app-btn read-more-btn">Read More</a>
+                    <div class="d-flex gap-2 button-group-actions">
                         <button class="btn app-btn icon-btn like-btn {% if article.is_liked_by_user %}liked{% endif %}" data-article-id="{{ article.pk }}" {% if not user.is_authenticated %}disabled title="Login to like" {% endif %}>
                             <i class="bi {% if article.is_liked_by_user %}bi-heart-fill{% else %}bi-heart{% endif %}"></i>
                             <span class="like-count">{{ article.total_likes }}</span>
@@ -115,7 +99,7 @@
     <ul class="pagination justify-content-center app-pagination">
         {% if articles.has_previous %}
             <li class="page-item">
-                <a class="page-link" href="?page={{ articles.previous_page_number }}{% if current_category != 'All' %}&category={{ current_category }}{% endif %}{% if search_query %}&q={{ search_query }}{% endif %}{% if start_date %}&start_date={{ start_date }}{% endif %}{% if end_date %}&end_date={{ end_date }}{% endif %}{% if min_likes %}&min_likes={{ min_likes }}{% endif %}{% if min_comments %}&min_comments={{ min_comments }}{% endif %}{% if sort_by %}&sort_by={{ sort_by }}{% endif %}">Previous</a>
+                <a class="page-link" href="?{% url_replace page=articles.previous_page_number %}">Previous</a>
             </li>
         {% else %}
             <li class="page-item disabled"><span class="page-link">Previous</span></li>
@@ -126,14 +110,14 @@
                 <li class="page-item active"><span class="page-link">{{ i }}</span></li>
             {% else %}
                 <li class="page-item">
-                    <a class="page-link" href="?page={{ i }}{% if current_category != 'All' %}&category={{ current_category }}{% endif %}{% if search_query %}&q={{ search_query }}{% endif %}{% if start_date %}&start_date={{ start_date }}{% endif %}{% if end_date %}&end_date={{ end_date }}{% endif %}{% if min_likes %}&min_likes={{ min_likes }}{% endif %}{% if min_comments %}&min_comments={{ min_comments }}{% endif %}{% if sort_by %}&sort_by={{ sort_by }}{% endif %}">{{ i }}</a>
+                    <a class="page-link" href="?{% url_replace page=i %}">{{ i }}</a>
                 </li>
             {% endif %}
         {% endfor %}
 
         {% if articles.has_next %}
             <li class="page-item">
-                <a class="page-link" href="?page={{ articles.next_page_number }}{% if current_category != 'All' %}&category={{ current_category }}{% endif %}{% if search_query %}&q={{ search_query }}{% endif %}{% if start_date %}&start_date={{ start_date }}{% endif %}{% if end_date %}&end_date={{ end_date }}{% endif %}{% if min_likes %}&min_likes={{ min_likes }}{% endif %}{% if min_comments %}&min_comments={{ min_comments }}{% endif %}{% if sort_by %}&sort_by={{ sort_by }}{% endif %}">Next</a>
+                <a class="page-link" href="?{% url_replace page=articles.next_page_number %}">Next</a>
             </li>
         {% else %}
             <li class="page-item disabled"><span class="page-link">Next</span></li>
@@ -146,22 +130,6 @@
 {% block extra_js %}
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        // --- NEW: Filter Toggle Logic ---
-        const toggleAdvancedFiltersBtn = document.getElementById('toggleAdvancedFiltersBtn');
-        const advancedFiltersContent = document.getElementById('advancedFiltersContent');
-
-        if (toggleAdvancedFiltersBtn && advancedFiltersContent) {
-            toggleAdvancedFiltersBtn.addEventListener('click', function() {
-                if (advancedFiltersContent.style.display === 'none') {
-                    advancedFiltersContent.style.display = 'block';
-                    toggleAdvancedFiltersBtn.innerHTML = '<i class="bi bi-filter-circle-fill me-2"></i> Hide Advanced Filters';
-                } else {
-                    advancedFiltersContent.style.display = 'none';
-                    toggleAdvancedFiltersBtn.innerHTML = '<i class="bi bi-sliders me-2"></i> Show Advanced Filters';
-                }
-            });
-        }
-        
         // --- Article Liking Logic ---
         function getCookie(name) {
             let cookieValue = null;
@@ -291,9 +259,3 @@
     });
 </script>
 {% endblock %}
-
-{# Custom filter to replace or add a GET parameter #}
-{% comment %}
-    # Removed the url_replace filter and its block as it was causing issues and
-    # the pagination links handle the URL parameters manually for simplicity.
-{% endcomment %}

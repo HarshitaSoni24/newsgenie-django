@@ -12,28 +12,26 @@
 
     <form method="post" class="mt-4">
         {% csrf_token %}
-        <div class="row justify-content-center">
-            <div class="col-lg-8">
-                <div class="form-group mb-4">
-                    <label class="form-label-custom mb-3">{{ form.preferred_categories.label }}:</label>
-                    <div class="row">
-                        {% for checkbox in form.preferred_categories %}
-                        <div class="col-md-6 col-lg-4 d-flex align-items-center mb-2">
-                            <div class="form-check custom-checkbox">
-                                {{ checkbox.tag }}
-                                <label class="form-check-label" for="{{ checkbox.id_for_label }}">
-                                    {{ checkbox.choice_label }}
-                                </label>
+        <div class="preference-grid-container">
+            <div class="row g-4 justify-content-center">
+                {% for checkbox in form.preferred_categories %}
+                <div class="col-6 col-md-4">
+                    <label class="preference-card-label" for="{{ checkbox.id_for_label }}">
+                        {{ checkbox.tag }}
+                        <div class="preference-card">
+                            <span class="preference-card-text">{{ checkbox.choice_label }}</span>
+                            <div class="checkmark-overlay">
+                                <i class="bi bi-check-circle-fill"></i>
                             </div>
                         </div>
-                        {% endfor %}
-                    </div>
+                    </label>
                 </div>
+                {% endfor %}
             </div>
         </div>
         
-        <div class="mt-4">
-            <button type="submit" class="btn app-btn primary-btn"><i class="bi bi-save me-2"></i> Save Preferences</button>
+        <div class="mt-5">
+            <button type="submit" class="btn app-btn primary-btn btn-lg"><i class="bi bi-save me-2"></i> Save Preferences</button>
         </div>
     </form>
 </div>
