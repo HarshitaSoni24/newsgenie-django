@@ -26,7 +26,7 @@
             <hr class="my-4 section-divider">
             
             <div class="form-group mb-3">
-                <label for="categoryFilter" class="form-label-custom">Category:</label>
+                <label class="form-label-custom">Category:</label>
                 <div class="category-filter-pills-form">
                     <a href="?{% url_replace category='All' %}" class="category-filter-pill {% if current_category == 'All' %}active{% endif %}">All</a>
                     {% for cat in categories %}
@@ -44,6 +44,28 @@
                         <option value="most_popular_likes" {% if sort_by == 'most_popular_likes' %}selected{% endif %}>Most Popular (Likes)</option>
                         <option value="most_popular_comments" {% if sort_by == 'most_popular_comments' %}selected{% endif %}>Most Popular (Comments)</option>
                     </select>
+                </div>
+            </div>
+
+            <div class="row g-3 mb-4">
+                <div class="col-md-6">
+                    <label for="startDate" class="form-label-custom">Date Range (From):</label>
+                    <input type="date" name="start_date" id="startDate" class="form-control app-input-field" value="{{ start_date }}">
+                </div>
+                <div class="col-md-6">
+                    <label for="endDate" class="form-label-custom">Date Range (To):</label>
+                    <input type="date" name="end_date" id="endDate" class="form-control app-input-field" value="{{ end_date }}">
+                </div>
+            </div>
+
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <label for="minLikes" class="form-label-custom">Min. Likes:</label>
+                    <input type="number" name="min_likes" id="minLikes" class="form-control app-input-field" placeholder="e.g., 5" value="{{ min_likes }}">
+                </div>
+                <div class="col-md-6">
+                    <label for="minComments" class="form-label-custom">Min. Comments:</label>
+                    <input type="number" name="min_comments" id="minComments" class="form-control app-input-field" placeholder="e.g., 3" value="{{ min_comments }}">
                 </div>
             </div>
         </div>
@@ -64,7 +86,10 @@
         <div class="app-card article-card h-100">
             <div class="card-body d-flex flex-column">
                 <h5 class="card-title-article">{{ article.title }}</h5>
-                <p class="card-meta-info">By {{ article.author }} on {{ article.published_at|date:"F d, Y" }}</p>
+                <div class="card-meta-info">
+                    <span>By {{ article.author }} on {{ article.published_at|date:"F d, Y" }}</span>
+                    <span class="reading-time"><i class="bi bi-clock-fill"></i> {{ article.reading_time }} min read</span>
+                </div>
                 <p class="card-text-summary">{{ article.summary|default:article.content|truncatechars:150 }}</p>
                 
                 <div class="article-actions">

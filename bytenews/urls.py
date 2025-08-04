@@ -31,5 +31,5 @@ if settings.DEBUG:
         path('__debug__/', include(debug_toolbar.urls)), # Use __debug__ as per DRF docs
     ] + urlpatterns # Add debug toolbar paths first
 
-if settings.DEBUG: # Your existing media/static serving for development
+if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

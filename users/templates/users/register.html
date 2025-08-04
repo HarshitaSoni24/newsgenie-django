@@ -1,10 +1,26 @@
-{% extends 'base.html' %}
+{% extends 'news/base.html' %}
+{% load static %}
+
+{% block title %}Register{% endblock %}
 
 {% block content %}
-<h2>Register</h2>
-<form method="POST">
-    {% csrf_token %}
-    {{ form.as_p }}
-    <button type="submit">Register</button>
-</form>
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="app-card p-5">
+            <h2 class="text-center mb-4">Create an Account</h2>
+            <form method="POST" novalidate>
+                {% csrf_token %}
+                
+                {{ form.as_p }}
+                
+                <div class="d-grid">
+                    <button type="submit" class="btn app-btn primary-btn mt-3">Register</button>
+                </div>
+            </form>
+            <p class="text-center mt-3">
+                Already have an account? <a href="{% url 'users:login' %}">Log In</a>
+            </p>
+        </div>
+    </div>
+</div>
 {% endblock %}

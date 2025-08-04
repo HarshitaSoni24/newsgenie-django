@@ -1,7 +1,14 @@
 from django.utils import timezone
 from django.db import models
 from django.contrib.auth.models import User
+import math 
+from django.contrib.auth.models import User
+from django.db.models.signals import post_save
+from django.dispatch import receiver
+from django.utils import timezone
+from datetime import timedelta
 
+    
 class Category(models.Model):
     name = models.CharField(max_length=100)
 
@@ -19,6 +26,24 @@ class Article(models.Model):
     category = models.ManyToManyField(Category, related_name='articles')
     approved = models.BooleanField(default=False)
     audio_file = models.FileField(upload_to='news_audio/', blank=True, null=True)
+
+    # NEW FEATURE: Estimated Reading Time field
+    reading_time = models.PositiveIntegerField(
+        default=0, 
+        help_text="Estimated reading time in minutes"
+    )
+
+    # NEW FEATURE: Automatically calculate reading time on save
+    def save(self, *args, **kwargs):
+        if self.content:
+            word_count = len(self.content.split())
+            # Assuming average of 225 words per minute
+            time_to_read = math.ceil(word_count / 225)
+            self.reading_time = max(1, time_to_read)
+        else:
+            self.reading_time = 0
+        super().save(*args, **kwargs)
+
 
     @property
     def total_likes(self):
@@ -95,7 +120,7 @@ class Comment(models.Model):
     def __str__(self):
         return f"Comment by {self.user.username} on {self.article.title[:30]}..."
 
-# NEW MODEL: UserArticleMetrics
+# NEW MODEL: UserArticleMetrics (This was kept from your original file)
 class UserArticleMetrics(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     article = models.ForeignKey(Article, on_delete=models.CASCADE)
