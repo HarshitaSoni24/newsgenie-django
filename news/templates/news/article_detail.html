@@ -43,29 +43,31 @@
                 </button>
             </div>
 
-            <div class="summary-options-wrapper app-card mb-4">
-                <h5 class="mb-3">Summary Length:</h5>
-                <div class="d-flex justify-content-center gap-3">
-                    <div class="form-check form-check-inline custom-radio">
-                        <input class="form-check-input" type="radio" name="summaryLength" id="shortSummary" value="3" checked>
-                        <label class="form-check-label" for="shortSummary">Short (3 sentences)</label>
-                    </div>
-                    <div class="form-check form-check-inline custom-radio">
-                        <input class="form-check-input" type="radio" name="summaryLength" id="mediumSummary" value="5">
-                        <label class="form-check-label" for="mediumSummary">Medium (5 sentences)</label>
-                    </div>
-                    <div class="form-check form-check-inline custom-radio">
-                        <input class="form-check-input" type="radio" name="summaryLength" id="longSummary" value="7">
-                        <label class="form-check-label" for="longSummary">Long (7 sentences)</label>
-                    </div>
-                </div>
-            </div>
-
             <div id="summarySection" class="app-card summary-card mb-4" style="display:none;">
-                <h4 class="card-heading"><i class="bi bi-file-earmark-text-fill me-2"></i> Article Summary</h4>
-                <div id="articleSummaryText" class="card-body-text summary-content">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h4 class="card-heading mb-0"><i class="bi bi-file-earmark-text-fill me-2"></i> Article Summary</h4>
                 </div>
+                <div id="articleSummaryText" class="card-body-text summary-content mb-4">
+                    </div>
                 {% if article.summary %}<div id="preExistingSummary" style="display: none;">{{ article.summary|linebreaksbr }}</div>{% endif %}
+
+                <div class="summary-options-wrapper mt-4 pt-4 border-top">
+                    <h5 class="mb-3 text-center">Summary Length:</h5>
+                    <div class="d-flex justify-content-center gap-3">
+                        <div class="form-check form-check-inline custom-radio">
+                            <input class="form-check-input" type="radio" name="summaryLength" id="shortSummary" value="3" checked>
+                            <label class="form-check-label" for="shortSummary">Short</label>
+                        </div>
+                        <div class="form-check form-check-inline custom-radio">
+                            <input class="form-check-input" type="radio" name="summaryLength" id="mediumSummary" value="5">
+                            <label class="form-check-label" for="mediumSummary">Medium</label>
+                        </div>
+                        <div class="form-check form-check-inline custom-radio">
+                            <input class="form-check-input" type="radio" name="summaryLength" id="longSummary" value="7">
+                            <label class="form-check-label" for="longSummary">Long</label>
+                        </div>
+                    </div>
+                </div>
             </div>
 
             <div id="audioSection" class="app-card audio-card mb-4" style="display:none;">
@@ -79,7 +81,6 @@
             </div>
 
             <hr class="section-divider my-5">
-
             <div class="app-card full-article-content-card mb-4">
                 <h3 class="card-heading"><i class="bi bi-book-fill me-2"></i> Full Article</h3>
                 <div class="card-body-text full-article-text">{{ article.content|linebreaksbr }}</div>
@@ -119,11 +120,21 @@
                     <div class="alert app-alert alert-warning mt-3">Please <a href="{% url 'users:login' %}">login</a> to provide feedback.</div>
                 {% endif %}
 
-                <div class="mt-4 feedback-stats-display">
-                    <p class="stats-text mb-0">
-                        <span class="text-success"><i class="bi bi-hand-thumbs-up-fill me-1"></i> Useful: <span id="usefulCount" class="stat-value">{{ feedback_useful }}</span></span>
-                        <span class="text-danger ms-3"><i class="bi bi-hand-thumbs-down-fill me-1"></i> Not Useful: <span id="notUsefulCount" class="stat-value">{{ feedback_not_useful }}</span></span>
-                    </p>
+                <div class="feedback-stats-display mt-4 pt-4 border-top">
+                    <div class="row">
+                        <div class="col-6">
+                            <div class="stat-item text-success">
+                                <div class="stat-label"><i class="bi bi-hand-thumbs-up-fill me-1"></i> Useful</div>
+                                <div id="usefulCount" class="stat-value">{{ feedback_useful }}</div>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="stat-item text-danger">
+                                <div class="stat-label"><i class="bi bi-hand-thumbs-down-fill me-1"></i> Not Useful</div>
+                                <div id="notUsefulCount" class="stat-value">{{ feedback_not_useful }}</div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -155,7 +166,9 @@
                         {% for comment in comments %}
                             <div class="comment-item p-3 mb-3 border rounded">
                                 <p class="comment-meta mb-1">
-                                    <strong>{{ comment.user.username }}</strong>
+                                    <a href="{% url 'users:profile' comment.user.username %}" class="comment-username-link">
+                                        <strong>{{ comment.user.username }}</strong>
+                                    </a>
                                     <span class="text-muted small ms-2">{% if comment.created_at %}{{ comment.created_at|naturaltime }}{% endif %}</span>
                                 </p>
                                 <p class="comment-content mb-0">{{ comment.content|linebreaksbr }}</p>
@@ -167,6 +180,23 @@
                 {% endif %}
             </div>
 
+            <div class="social-share-section text-center mt-5 pt-5 border-top">
+                <h5 class="share-title"><i class="bi bi-share-fill"></i> Share this Article:</h5>
+                <div class="d-flex justify-content-center gap-3">
+                    <a href="https://twitter.com/intent/tweet?url={{ request.build_absolute_uri }}&text={{ article.title|urlencode }}" target="_blank" class="social-share-btn twitter">
+                        <i class="bi bi-twitter"></i>
+                    </a>
+                    <a href="https://www.facebook.com/sharer/sharer.php?u={{ request.build_absolute_uri }}" target="_blank" class="social-share-btn facebook">
+                        <i class="bi bi-facebook"></i>
+                    </a>
+                    <a href="https://www.linkedin.com/shareArticle?mini=true&url={{ request.build_absolute_uri }}&title={{ article.title|urlencode }}&summary={{ article.summary|truncatechars:100|urlencode }}" target="_blank" class="social-share-btn linkedin">
+                        <i class="bi bi-linkedin"></i>
+                    </a>
+                    <button id="copyLinkBtn" class="social-share-btn copy-link" data-url="{{ request.build_absolute_uri }}">
+                        <i class="bi bi-clipboard-check"></i>
+                    </button>
+                </div>
+            </div>
 
             <div class="text-center mt-5 mb-5">
                 <a href="{% url 'news:article_list' %}" class="btn app-btn outline-btn back-to-articles-btn">
@@ -637,4 +667,23 @@
 
     });
 </script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const copyLinkBtn = document.getElementById('copyLinkBtn');
+    if (copyLinkBtn) {
+        copyLinkBtn.addEventListener('click', function() {
+            const urlToCopy = this.dataset.url;
+            navigator.clipboard.writeText(urlToCopy).then(function() {
+                // You can use your existing showToast function if it's globally available
+                // If not, a simple alert will work.
+                alert('Article link copied to clipboard!');
+            }, function(err) {
+                console.error('Could not copy text: ', err);
+            });
+        });
+    }
+});
+</script>
+
 {% endblock %}

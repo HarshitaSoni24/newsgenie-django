@@ -481,3 +481,431 @@ body.dark-mode .dashboard-list-card p {
 body.dark-mode .metric-card p.metric-value { color: var(--accent-blue-end); }
 body.dark-mode .metric-card.approved p.metric-value { color: var(--accent-green); }
 body.dark-mode .metric-card.pending p.metric-value { color: var(--accent-yellow); }
+
+/* === 11. ARTICLE OF THE WEEK SPOTLIGHT (NEW) =============================== */
+
+.spotlight-container {
+    position: relative;
+}
+
+.spotlight-badge {
+    position: absolute;
+    top: -15px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--gradient-primary);
+    color: white;
+    padding: 8px 20px;
+    border-radius: 50px;
+    font-weight: 700;
+    font-size: 1rem;
+    z-index: 10;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+}
+
+.spotlight-card {
+    border: 3px solid var(--accent-purple-start);
+    background-color: #faf8ff;
+}
+
+body.dark-mode .spotlight-card {
+    border-color: var(--accent-blue-end);
+    background-color: #20202c;
+}
+
+.spotlight-title {
+    font-size: 1.8rem;
+}
+
+/* === STREAK INDICATOR (NEW) ============================================= */
+.streak-indicator {
+    display: inline-flex;
+    align-items: center;
+    background-color: rgba(255, 152, 0, 0.15);
+    color: #ff9800;
+    padding: 4px 8px;
+    border-radius: 50px;
+    font-size: 0.9rem;
+    font-weight: 700;
+    font-family: var(--font-heading);
+}
+
+.streak-indicator i {
+    color: #ff9800;
+    margin-right: 4px;
+}
+
+body.dark-mode .streak-indicator {
+    background-color: rgba(255, 152, 0, 0.2);
+}
+
+/* === HOMEPAGE BEAUTIFICATION (NEW) ========================================== */
+
+.homepage-hero-container {
+    background-color: var(--light-bg-secondary);
+    border: 1px solid var(--light-border-color);
+    border-radius: var(--border-radius-lg);
+    padding: var(--spacing-xxl) var(--spacing-xl);
+    position: relative;
+    overflow: hidden; /* This is important for the background shapes */
+    text-align: center;
+}
+body.dark-mode .homepage-hero-container {
+    background: var(--dark-bg-secondary);
+    border-color: var(--dark-border-color);
+}
+
+.hero-content {
+    position: relative;
+    z-index: 2; /* Ensures content is above the background shapes */
+}
+
+.hero-icon {
+    font-size: 4rem;
+    background: var(--gradient-primary);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom: var(--spacing-lg);
+    display: inline-block;
+}
+
+.hero-title {
+    font-size: 3.5rem;
+    font-weight: 800;
+    color: var(--light-heading-color);
+    margin-bottom: var(--spacing-md);
+}
+body.dark-mode .hero-title {
+    color: var(--dark-heading-color);
+}
+
+.hero-subtitle {
+    font-size: 1.25rem;
+    color: var(--light-text-secondary);
+    max-width: 650px;
+    margin-left: auto;
+    margin-right: auto;
+    line-height: 1.8;
+}
+body.dark-mode .hero-subtitle {
+    color: var(--dark-text-secondary);
+}
+
+.hero-divider {
+    max-width: 100px;
+    margin: var(--spacing-xl) auto;
+    border-top: 3px solid;
+    opacity: 0.1;
+    color: var(--accent-purple-start);
+}
+
+/* --- Decorative Background Shapes & Animations --- */
+.hero-background-shapes {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 1;
+}
+
+.shape {
+    position: absolute;
+    border-radius: 50%;
+    background: var(--gradient-secondary);
+    opacity: 0.08;
+    filter: blur(50px);
+    animation: float 20s ease-in-out infinite alternate;
+}
+body.dark-mode .shape {
+    background: var(--gradient-primary);
+    opacity: 0.15;
+    filter: blur(80px);
+}
+
+.shape-1 {
+    width: 300px;
+    height: 300px;
+    top: -50px;
+    left: -80px;
+    animation-duration: 25s;
+}
+
+.shape-2 {
+    width: 400px;
+    height: 400px;
+    bottom: -100px;
+    right: -150px;
+    animation-duration: 20s;
+    animation-delay: -5s;
+}
+
+.shape-3 {
+    width: 200px;
+    height: 200px;
+    bottom: 50px;
+    left: 100px;
+    opacity: 0.05;
+    animation-duration: 30s;
+}
+
+/* Keyframe animation for the "floating" effect */
+@keyframes float {
+    0% {
+        transform: translateY(0px) translateX(0px) rotate(0deg);
+    }
+    100% {
+        transform: translateY(40px) translateX(-30px) rotate(20deg);
+    }
+}
+
+/* --- Features Section --- */
+.features-section {
+    padding: var(--spacing-xxl) 0;
+}
+.feature-card {
+    background-color: transparent;
+    border: none;
+    padding: var(--spacing-lg);
+    transition: all var(--transition-normal);
+}
+.feature-icon {
+    font-size: 3rem;
+    margin-bottom: var(--spacing-md);
+    background: var(--gradient-primary);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    display: inline-block;
+}
+.feature-title {
+    font-size: 1.5rem;
+    margin-bottom: var(--spacing-sm);
+    color: var(--light-heading-color);
+}
+body.dark-mode .feature-title {
+    color: var(--dark-heading-color);
+}
+.feature-description {
+    color: var(--light-text-secondary);
+    max-width: 300px;
+    margin: 0 auto;
+}
+body.dark-mode .feature-description {
+    color: var(--dark-text-secondary);
+}
+
+/* --- Homepage Robot Icon Hover Animation --- */
+
+/* First, we tell the icon to animate smoothly */
+.hero-icon i {
+    transition: transform 0.3s ease-in-out;
+}
+
+/* Then, we define what happens on hover */
+.hero-icon:hover i {
+    transform: rotate(15deg) scale(1.1); /* This will make it tilt and grow slightly */
+}
+
+/* === 13. SOCIAL SHARING BUTTONS (NEW) ======================================= */
+
+.social-share-section {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1.5rem 0;
+    border-top: 1px solid var(--light-border-color);
+    border-bottom: 1px solid var(--light-border-color);
+}
+body.dark-mode .social-share-section {
+    border-color: var(--dark-border-color);
+}
+
+.share-title {
+    font-family: var(--font-heading);
+    font-weight: 700; /* Bolder text */
+    color: var(--light-text-secondary);
+    margin-bottom: 0;
+    white-space: nowrap;
+    display: inline-flex; /* Aligns icon and text */
+    align-items: center;
+    gap: 0.5rem; /* Adds space between icon and text */
+    font-size: 1.1rem; /* Slightly larger text */
+}
+
+body.dark-mode .share-title {
+    color: var(--dark-text-secondary);
+}
+
+.social-share-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 45px;
+    height: 45px;
+    border-radius: 50%;
+    font-size: 1.2rem;
+    color: #fff;
+    text-decoration: none;
+    transition: all var(--transition-normal);
+    border: none;
+}
+.social-share-btn:hover {
+    transform: translateY(-5px) scale(1.1);
+    box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+}
+
+.social-share-btn.twitter { background-color: #1DA1F2; }
+.social-share-btn.facebook { background-color: #1877F2; }
+.social-share-btn.linkedin { background-color: #0A66C2; }
+.social-share-btn.copy-link { background-color: #6c757d; }
+
+/* === 14. USER PROFILE PAGE (BEAUTIFIED) =================================== */
+
+.profile-header-card {
+    padding-top: 2rem;
+    padding-bottom: 2rem;
+}
+
+.profile-avatar {
+    font-size: 6rem;
+    color: var(--light-text-secondary);
+}
+body.dark-mode .profile-avatar {
+    color: var(--dark-text-secondary);
+}
+
+.profile-username {
+    font-size: 2.5rem;
+    font-weight: 700;
+    margin-top: 0.5rem;
+    color: var(--light-heading-color);
+}
+body.dark-mode .profile-username {
+    color: var(--dark-heading-color);
+}
+
+.profile-joindate {
+    font-size: 1rem;
+    color: var(--light-text-secondary);
+}
+body.dark-mode .profile-joindate {
+    color: var(--dark-text-secondary);
+}
+
+.profile-stats-grid {
+    display: flex;
+    justify-content: center;
+    gap: 1.5rem;
+    margin-top: 2rem;
+    border-top: 1px solid var(--light-border-color);
+    padding-top: 2rem;
+}
+body.dark-mode .profile-stats-grid {
+    border-top-color: var(--dark-border-color);
+}
+
+.stat-card {
+    background-color: var(--light-bg-primary);
+    padding: 1rem 1.5rem;
+    border-radius: var(--border-radius-md);
+    text-align: center;
+    min-width: 180px;
+}
+body.dark-mode .stat-card {
+    background-color: var(--dark-bg-primary);
+}
+
+.stat-value {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--light-heading-color);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+}
+body.dark-mode .stat-value {
+    color: var(--dark-heading-color);
+}
+.stat-value .bi-fire {
+    color: #ff9800;
+}
+
+.stat-label {
+    font-size: 0.9rem;
+    color: var(--light-text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+body.dark-mode .stat-label {
+    color: var(--dark-text-secondary);
+}
+
+.profile-comment-card {
+    background-color: var(--light-bg-secondary);
+    border: 1px solid var(--light-border-color);
+    border-radius: var(--border-radius-md);
+    margin-bottom: var(--spacing-sm);
+    transition: all var(--transition-normal);
+    padding: 1rem 1.5rem;
+}
+body.dark-mode .profile-comment-card {
+    background-color: var(--dark-bg-secondary);
+    border-color: var(--dark-border-color);
+}
+.profile-comment-card:hover {
+    transform: translateX(5px);
+    border-left: 4px solid var(--accent-purple-start);
+    background-color: var(--light-bg-secondary);
+    box-shadow: 0 5px 15px var(--light-shadow-color);
+}
+body.dark-mode .profile-comment-card:hover {
+    border-left-color: var(--accent-blue-end);
+    background-color: var(--dark-bg-tertiary);
+}
+
+.comment-username-link {
+    text-decoration: none;
+}
+
+/* === FEEDBACK SECTION UI (FIX) ============================================ */
+.feedback-card .border-top {
+    border-top: 1px solid var(--light-border-color) !important;
+}
+body.dark-mode .feedback-card .border-top {
+    border-top-color: var(--dark-border-color) !important;
+}
+
+.feedback-stats-display {
+    text-align: center;
+}
+
+.stat-item .stat-label {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--light-text-secondary);
+    margin-bottom: 0.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+body.dark-mode .stat-item .stat-label {
+    color: var(--dark-text-secondary);
+}
+
+.stat-item .stat-value {
+    font-size: 2.5rem;
+    font-weight: 700;
+    line-height: 1;
+    color: var(--light-heading-color);
+}
+body.dark-mode .stat-item .stat-value {
+    color: var(--dark-heading-color);
+}
+
+.stat-item.text-success .stat-value {
+    color: var(--accent-green);
+}
+.stat-item.text-danger .stat-value {
+    color: var(--accent-red);
+}

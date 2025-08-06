@@ -11,6 +11,7 @@ class ArticleAdmin(admin.ModelAdmin):
     'source',
     ('category', RelatedOnlyFieldListFilter),
     'approved',
+    'is_spotlighted',
     'published_at',
 )
     search_fields = ('title', 'content', 'author')
@@ -20,7 +21,20 @@ class ArticleAdmin(admin.ModelAdmin):
 
 
     # Bulk Actions
-    actions = ['make_approved', 'make_pending']
+    actions = ['make_approved', 'make_pending', 'set_as_spotlight']
+
+    def set_as_spotlight(self, request, queryset):
+        # Un-spotlight all other articles first
+        Article.objects.update(is_spotlighted=False)
+        # Spotlight the selected one (if only one is selected)
+        if queryset.count() == 1:
+            article = queryset.first()
+            article.is_spotlighted = True
+            article.save()
+            self.message_user(request, f"'{article.title}' is now the Article of the Week.", level='success')
+        else:
+            self.message_user(request, "Please select only one article to set as the spotlight.", level='warning')
+    set_as_spotlight.short_description = "Set as Article of the Week"
 
     def make_approved(self, request, queryset):
         updated = queryset.update(approved=True)

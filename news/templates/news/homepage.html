@@ -4,7 +4,6 @@
 {% block title %}Welcome to NewsGenie AI{% endblock %}
 
 {% block content %}
-
 <div class="homepage-hero-container">
     <div class="hero-background-shapes">
         <div class="shape shape-1"></div>
@@ -24,6 +23,38 @@
             <a href="{% url 'news:article_list' %}" class="btn app-btn primary-btn btn-lg">
                 <i class="bi bi-journals me-2"></i> Explore All Articles
             </a>
+        </div>
+    </div>
+</div>
+
+<div class="features-section">
+    <div class="row text-center g-4">
+        <div class="col-md-4">
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <i class="bi bi-card-text"></i>
+                </div>
+                <h3 class="feature-title">AI Summaries</h3>
+                <p class="feature-description">Get the gist of any article in seconds with concise, AI-generated summaries.</p>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <i class="bi bi-earbuds"></i>
+                </div>
+                <h3 class="feature-title">Audio Playback</h3>
+                <p class="feature-description">Listen to the news on the go with our text-to-speech audio feature.</p>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <i class="bi bi-magic"></i>
+                </div>
+                <h3 class="feature-title">Personalized Feed</h3>
+                <p class="feature-description">Set your preferences to discover articles tailored just for you.</p>
+            </div>
         </div>
     </div>
 </div>

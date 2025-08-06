@@ -1,14 +1,8 @@
 from django.utils import timezone
 from django.db import models
 from django.contrib.auth.models import User
-import math 
-from django.contrib.auth.models import User
-from django.db.models.signals import post_save
-from django.dispatch import receiver
-from django.utils import timezone
-from datetime import timedelta
+import math
 
-    
 class Category(models.Model):
     name = models.CharField(max_length=100)
 
@@ -26,24 +20,19 @@ class Article(models.Model):
     category = models.ManyToManyField(Category, related_name='articles')
     approved = models.BooleanField(default=False)
     audio_file = models.FileField(upload_to='news_audio/', blank=True, null=True)
+    reading_time = models.PositiveIntegerField(default=0, help_text="Estimated reading time in minutes")
 
-    # NEW FEATURE: Estimated Reading Time field
-    reading_time = models.PositiveIntegerField(
-        default=0, 
-        help_text="Estimated reading time in minutes"
-    )
+    # NEW FEATURE: Field to mark the Article of the Week
+    is_spotlighted = models.BooleanField(default=False, help_text="Check this to feature this article on the articles page.")
 
-    # NEW FEATURE: Automatically calculate reading time on save
     def save(self, *args, **kwargs):
         if self.content:
             word_count = len(self.content.split())
-            # Assuming average of 225 words per minute
             time_to_read = math.ceil(word_count / 225)
             self.reading_time = max(1, time_to_read)
         else:
             self.reading_time = 0
         super().save(*args, **kwargs)
-
 
     @property
     def total_likes(self):
@@ -52,7 +41,6 @@ class Article(models.Model):
     @property
     def total_comments(self):
         return self.comments.count()
-
 
     def approved_status(self):
         return self.approved
@@ -120,16 +108,15 @@ class Comment(models.Model):
     def __str__(self):
         return f"Comment by {self.user.username} on {self.article.title[:30]}..."
 
-# NEW MODEL: UserArticleMetrics (This was kept from your original file)
 class UserArticleMetrics(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     article = models.ForeignKey(Article, on_delete=models.CASCADE)
-    time_on_page = models.IntegerField(default=0, help_text="Time spent on page in seconds") # Track seconds
+    time_on_page = models.IntegerField(default=0, help_text="Time spent on page in seconds")
     scroll_depth = models.FloatField(default=0.0, help_text="Max scroll depth as a percentage (0.0 to 1.0)")
-    last_tracked_at = models.DateTimeField(auto_now=True) # Automatically updates on save
+    last_tracked_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        unique_together = ('user', 'article') # One metrics record per user-article pair
+        unique_together = ('user', 'article')
 
     def __str__(self):
         return f"Metrics for {self.user.username} on {self.article.title[:30]}..."

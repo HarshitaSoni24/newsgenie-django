@@ -9,6 +9,24 @@
     <h1 class="page-title-heading">Latest NewsGenie Articles</h1>
     <p class="page-subtitle-text">Stay informed with AI-powered summaries.</p>
 </div>
+{% if spotlight_article %}
+<div class="spotlight-container mb-5">
+    <div class="spotlight-badge"><i class="bi bi-star-fill"></i> Article of the Week</div>
+    <div class="app-card article-card spotlight-card">
+        <div class="card-body d-flex flex-column">
+            <h3 class="card-title-article spotlight-title">{{ spotlight_article.title }}</h3>
+            <div class="card-meta-info">
+                <span>By {{ spotlight_article.author }} on {{ spotlight_article.published_at|date:"F d, Y" }}</span>
+                <span class="reading-time"><i class="bi bi-clock-fill"></i> {{ spotlight_article.reading_time }} min read</span>
+            </div>
+            <p class="card-text-summary">{{ spotlight_article.summary|default:spotlight_article.content|truncatechars:200 }}</p>
+            <div class="article-actions">
+                <a href="{% url 'news:detail' spotlight_article.pk %}" class="btn app-btn read-more-btn">Read Full Story</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
 
 <div class="advanced-filter-sort-container app-card mb-5">
     <form method="GET" action="{% url 'news:article_list' %}" class="filter-sort-form">

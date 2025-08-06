@@ -31,6 +31,7 @@ logger = logging.getLogger(__name__)
 @cache_page(60 * 15)
 @vary_on_cookie # THIS IS THE FIX: It tells the cache to be user-aware
 def article_list(request):
+    spotlight_article = Article.objects.filter(is_spotlighted=True, approved=True).first()
     category_filter = request.GET.get("category", "All")
     query = request.GET.get("q", "")
     start_date_str = request.GET.get("start_date")
@@ -40,6 +41,8 @@ def article_list(request):
     sort_by = request.GET.get("sort_by", "-published_at")
 
     articles = Article.objects.filter(approved=True)
+    if spotlight_article:
+        articles = articles.exclude(pk=spotlight_article.pk)
 
     if category_filter and category_filter != "All":
         articles = articles.filter(category__name__iexact=category_filter)
@@ -104,6 +107,7 @@ def article_list(request):
 
     categories = Category.objects.all()
     context = {
+        "spotlight_article": spotlight_article,
         "articles": page_obj,
         "categories": categories,
         "current_category": category_filter,

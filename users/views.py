@@ -1,8 +1,10 @@
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import login, authenticate, logout
 from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
 from django.contrib import messages
 from django.contrib.auth.signals import user_logged_in
+from django.contrib.auth.models import User # Import the User model
+from news.models import Comment # Import the Comment model 
 from django.dispatch import receiver
 from django.utils import timezone
 from datetime import timedelta
@@ -61,3 +63,13 @@ def update_streak(sender, request, user, **kwargs):
         
     profile.last_login_date = today
     profile.save()
+
+def profile_view(request, username):
+    profile_user = get_object_or_404(User, username=username)
+    user_comments = Comment.objects.filter(user=profile_user, approved=True).order_by('-created_at')
+    
+    context = {
+        'profile_user': profile_user,
+        'user_comments': user_comments,
+    }
+    return render(request, 'users/profile.html', context)

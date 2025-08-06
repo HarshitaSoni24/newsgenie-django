@@ -1,0 +1,49 @@
+{% extends 'news/base.html' %}
+{% load humanize %}
+
+{% block title %}{{ profile_user.username }}'s Profile{% endblock %}
+
+{% block content %}
+<div class="profile-page-container mt-5">
+    <div class="app-card profile-header-card text-center">
+        <div class="profile-avatar">
+            <i class="bi bi-person-circle"></i>
+        </div>
+        <h1 class="profile-username mt-3">{{ profile_user.username }}</h1>
+        <p class="profile-joindate">Member since {{ profile_user.date_joined|date:"F Y" }}</p>
+
+        <div class="profile-stats-grid mt-4">
+            <div class="stat-card">
+                <div class="stat-value">{{ user_comments.count }}</div>
+                <div class="stat-label">Total Comments</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">
+                    <i class="bi bi-fire"></i> {{ profile_user.profile.streak_count }}
+                </div>
+                <div class="stat-label">Reading Streak</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="profile-comments-section mt-5">
+        <h3 class="section-title text-center mb-4">Recent Activity</h3>
+        {% if user_comments %}
+            <div class="list-group">
+                {% for comment in user_comments %}
+                    <a href="{% url 'news:detail' comment.article.pk %}#comment-{{ comment.pk }}" class="list-group-item list-group-item-action profile-comment-card">
+                        <p class="comment-content mb-1">"{{ comment.content|truncatewords:20 }}"</p>
+                        <small class="comment-meta">
+                            Commented on "{{ comment.article.title|truncatechars:30 }}" &middot; {{ comment.created_at|naturaltime }}
+                        </small>
+                    </a>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="app-card text-center">
+                <p class="text-muted mb-0">This user hasn't made any comments yet.</p>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

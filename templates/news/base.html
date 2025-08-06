@@ -35,13 +35,15 @@
                                 </span>
                             </a>
                             <ul class="dropdown-menu dropdown-menu-end app-dropdown-menu" aria-labelledby="navbarDropdown">
-                                <li><a class="dropdown-item dropdown-item-custom" href="{% url 'news:preferences' %}"><i class="bi bi-sliders"></i> Preferences</a></li>
-                                <li><a class="dropdown-item dropdown-item-custom" href="{% url 'news:recommendations' %}"><i class="bi bi-magic"></i> Recommendations</a></li>
-                                <li><a class="dropdown-item dropdown-item-custom" href="{% url 'news:history' %}"><i class="bi bi-clock-history"></i> Reading History</a></li>
-                                <li><a class="dropdown-item dropdown-item-custom" href="{% url 'news:bookmarks' %}"><i class="bi bi-bookmark-heart-fill"></i> My Bookmarks</a></li>
-                                <li><hr class="dropdown-divider"></li>
-                                <li><a class="dropdown-item dropdown-item-custom" href="{% url 'users:logout' %}"><i class="bi bi-box-arrow-right"></i> Logout</a></li>
-                            </ul>
+    <li><a class="dropdown-item dropdown-item-custom" href="{% url 'users:profile' user.username %}"><i class="bi bi-person-fill"></i> My Profile</a></li>
+
+    <li><a class="dropdown-item dropdown-item-custom" href="{% url 'news:preferences' %}"><i class="bi bi-sliders"></i> Preferences</a></li>
+    <li><a class="dropdown-item dropdown-item-custom" href="{% url 'news:recommendations' %}"><i class="bi bi-magic"></i> Recommendations</a></li>
+    <li><a class="dropdown-item dropdown-item-custom" href="{% url 'news:history' %}"><i class="bi bi-clock-history"></i> Reading History</a></li>
+    <li><a class="dropdown-item dropdown-item-custom" href="{% url 'news:bookmarks' %}"><i class="bi bi-bookmark-heart-fill"></i> My Bookmarks</a></li>
+    <li><hr class="dropdown-divider"></li>
+    <li><a class="dropdown-item dropdown-item-custom" href="{% url 'users:logout' %}"><i class="bi bi-box-arrow-right"></i> Logout</a></li>
+</ul>
                         </li>
                     {% else %}
                         <li class="nav-item">
