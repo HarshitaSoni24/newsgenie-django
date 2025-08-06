@@ -20,9 +20,19 @@
         </p>
         <hr class="hero-divider">
         <div class="hero-cta-buttons mt-4">
-            <a href="{% url 'news:article_list' %}" class="btn app-btn primary-btn btn-lg">
-                <i class="bi bi-journals me-2"></i> Explore All Articles
-            </a>
+            {% if user.is_authenticated %}
+                <a href="{% url 'news:article_list' %}" class="btn app-btn primary-btn btn-lg">
+                    <i class="bi bi-journals me-2"></i> Explore All Articles
+                </a>
+            {% else %}
+                <p class="hero-subtitle mb-4">Please login or register to start exploring articles.</p>
+                <a href="{% url 'users:login' %}" class="btn app-btn secondary-btn btn-lg">
+                    <i class="bi bi-box-arrow-in-right me-2"></i> Login
+                </a>
+                <a href="{% url 'users:register' %}" class="btn app-btn primary-btn btn-lg">
+                    <i class="bi bi-person-plus-fill me-2"></i> Register
+                </a>
+            {% endif %}
         </div>
     </div>
 </div>

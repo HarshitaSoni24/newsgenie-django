@@ -300,6 +300,23 @@ body.dark-mode .article-actions {
     font-size: 1rem;
     border-radius: var(--border-radius-md);
 }
+/* === THIS IS THE FIX for Dark Mode Icons === */
+
+/* Sets a default light color for the icons in dark mode */
+body.dark-mode .icon-btn i {
+    color: var(--dark-text-secondary); 
+}
+
+/* Ensures the icon color changes on hover in dark mode */
+body.dark-mode .button-group-actions .icon-btn:hover i {
+    color: var(--accent-blue-end) !important;
+}
+
+/* Ensures the icon is white when the button is active (liked/bookmarked) */
+.icon-btn.liked i, .icon-btn.bookmarked i {
+    color: white !important;
+}
+
 body.dark-mode .button-group-actions .icon-btn {
     background-color: var(--dark-bg-tertiary) !important;
     color: var(--dark-text-secondary) !important;
@@ -908,4 +925,76 @@ body.dark-mode .stat-item .stat-value {
 }
 .stat-item.text-danger .stat-value {
     color: var(--accent-red);
+}
+/* === LOGIN & REGISTER PAGE BEAUTIFICATION (NEW) ========================= */
+
+.auth-card {
+    background-color: var(--light-bg-secondary);
+    border: 1px solid var(--light-border-color);
+}
+body.dark-mode .auth-card {
+    background-color: rgba(34, 34, 48, 0.5); /* Semi-transparent background */
+    border-color: var(--dark-border-color);
+}
+
+.auth-form .form-group {
+    display: flex;
+    flex-direction: column;
+}
+
+.auth-form label {
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+    color: var(--light-text-secondary);
+}
+body.dark-mode .auth-form label {
+    color: var(--dark-text-secondary);
+}
+
+/* This is the new style for your text fields */
+.auth-form input[type="text"],
+.auth-form input[type="password"] {
+    background-color: var(--light-bg-primary);
+    border: 1px solid var(--light-border-color);
+    border-radius: var(--border-radius-md);
+    padding: 12px 16px;
+    color: var(--light-heading-color);
+    transition: all var(--transition-normal);
+}
+body.dark-mode .auth-form input[type="text"],
+body.dark-mode .auth-form input[type="password"] {
+    background-color: var(--dark-bg-primary);
+    border-color: var(--dark-border-color);
+    color: var(--dark-heading-color);
+}
+
+.auth-form input[type="text"]:focus,
+.auth-form input[type="password"]:focus {
+    outline: none;
+    border-color: var(--accent-purple-start);
+    box-shadow: 0 0 0 3px rgba(131, 96, 195, 0.25);
+}
+body.dark-mode .auth-form input[type="text"]:focus,
+body.dark-mode .auth-form input[type="password"]:focus {
+    border-color: var(--accent-blue-end);
+    box-shadow: 0 0 0 3px rgba(109, 213, 237, 0.25);
+}
+
+.auth-form .form-help-text {
+    font-size: 0.85rem;
+    color: var(--light-text-secondary);
+    margin-top: 0.5rem;
+}
+body.dark-mode .auth-form .form-help-text {
+    color: var(--dark-text-secondary);
+}
+
+.auth-form .form-error-text {
+    font-size: 0.85rem;
+    color: var(--accent-red);
+    margin-top: 0.5rem;
+}
+
+.auth-switch-link a {
+    font-weight: 600;
 }
