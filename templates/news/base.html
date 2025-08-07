@@ -91,11 +91,15 @@
                 document.cookie = name + "=" + (value || "")  + expires + "; path=/";
             }
 
-            function updateIcon(theme) {
+             function updateIcon(theme) {
+                // The icon should show the OPPOSITE of the current theme
+                // If the theme is dark, show the sun icon to switch to light.
                 if (theme === 'dark') {
                     themeIcon.classList.remove('bi-moon-stars-fill');
                     themeIcon.classList.add('bi-sun-fill');
-                } else {
+                } 
+                // If the theme is light, show the moon icon to switch to dark.
+                else { 
                     themeIcon.classList.remove('bi-sun-fill');
                     themeIcon.classList.add('bi-moon-stars-fill');
                 }

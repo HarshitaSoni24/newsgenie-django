@@ -9,6 +9,8 @@ from django.dispatch import receiver
 from django.utils import timezone
 from datetime import timedelta
 from .models import Profile
+from django.contrib.auth.decorators import login_required # Add this import
+from .forms import UserUpdateForm, ProfileUpdateForm # Add this import
 
 # This is your original register function, renamed to match the URL config
 def register_view(request):
@@ -73,3 +75,26 @@ def profile_view(request, username):
         'user_comments': user_comments,
     }
     return render(request, 'users/profile.html', context)
+
+
+@login_required
+def edit_profile_view(request):
+    if request.method == 'POST':
+        user_form = UserUpdateForm(request.POST, instance=request.user)
+        profile_form = ProfileUpdateForm(request.POST, instance=request.user.profile)
+        
+        if user_form.is_valid() and profile_form.is_valid():
+            user_form.save()
+            profile_form.save()
+            messages.success(request, 'Your profile has been updated successfully!')
+            return redirect('users:profile', username=request.user.username)
+    else:
+        user_form = UserUpdateForm(instance=request.user)
+        profile_form = ProfileUpdateForm(instance=request.user.profile)
+
+    context = {
+        'user_form': user_form,
+        'profile_form': profile_form
+    }
+    
+    return render(request, 'users/profile_edit.html', context)

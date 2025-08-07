@@ -472,7 +472,7 @@ body.dark-mode .metric-card,
 body.dark-mode .dashboard-list-card {
     background-color: var(--dark-bg-tertiary);
     border-color: var(--dark-border-color);
-    box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+    box-shadow: 0 4px 10px rgba(148, 14, 14, 0.538);
 }
 body.dark-mode .metric-card h3,
 body.dark-mode .dashboard-list-card h3 {
@@ -928,14 +928,7 @@ body.dark-mode .stat-item .stat-value {
 }
 /* === LOGIN & REGISTER PAGE BEAUTIFICATION (NEW) ========================= */
 
-.auth-card {
-    background-color: var(--light-bg-secondary);
-    border: 1px solid var(--light-border-color);
-}
-body.dark-mode .auth-card {
-    background-color: rgba(34, 34, 48, 0.5); /* Semi-transparent background */
-    border-color: var(--dark-border-color);
-}
+/* === LOGIN & REGISTER PAGE BEAUTIFICATION (FIX) ========================= */
 
 .auth-form .form-group {
     display: flex;
@@ -951,7 +944,8 @@ body.dark-mode .auth-form label {
     color: var(--dark-text-secondary);
 }
 
-/* This is the new style for your text fields */
+/* This is the new, unified style for ALL form inputs and textareas */
+.auth-form .auth-input,
 .auth-form input[type="text"],
 .auth-form input[type="password"] {
     background-color: var(--light-bg-primary);
@@ -960,7 +954,9 @@ body.dark-mode .auth-form label {
     padding: 12px 16px;
     color: var(--light-heading-color);
     transition: all var(--transition-normal);
+    width: 100%; /* Ensure inputs take full width */
 }
+body.dark-mode .auth-form .auth-input,
 body.dark-mode .auth-form input[type="text"],
 body.dark-mode .auth-form input[type="password"] {
     background-color: var(--dark-bg-primary);
@@ -968,12 +964,14 @@ body.dark-mode .auth-form input[type="password"] {
     color: var(--dark-heading-color);
 }
 
+.auth-form .auth-input:focus,
 .auth-form input[type="text"]:focus,
 .auth-form input[type="password"]:focus {
     outline: none;
     border-color: var(--accent-purple-start);
     box-shadow: 0 0 0 3px rgba(131, 96, 195, 0.25);
 }
+body.dark-mode .auth-form .auth-input:focus,
 body.dark-mode .auth-form input[type="text"]:focus,
 body.dark-mode .auth-form input[type="password"]:focus {
     border-color: var(--accent-blue-end);
@@ -997,4 +995,138 @@ body.dark-mode .auth-form .form-help-text {
 
 .auth-switch-link a {
     font-weight: 600;
+}
+/* === 15. BEAUTIFIED USER PROFILE (NEW) ===================================== */
+
+.profile-info-card {
+    padding: 2rem;
+}
+
+.profile-avatar {
+    font-size: 6rem;
+    line-height: 1;
+    color: var(--light-text-secondary);
+}
+body.dark-mode .profile-avatar {
+    color: var(--dark-text-secondary);
+}
+
+.profile-full-name {
+    font-size: 1.8rem;
+    font-weight: 700;
+    margin-bottom: 0.25rem;
+}
+
+.profile-username-display {
+    font-size: 1rem;
+    color: var(--light-text-secondary);
+    margin-bottom: 0;
+}
+body.dark-mode .profile-username-display {
+    color: var(--dark-text-secondary);
+}
+
+.profile-info-card hr {
+    border-color: var(--light-border-color);
+}
+body.dark-mode .profile-info-card hr {
+    border-color: var(--dark-border-color);
+}
+
+.profile-meta-info {
+    font-size: 0.9rem;
+}
+.meta-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+    color: var(--light-text-secondary);
+    margin-bottom: 1rem;
+}
+body.dark-mode .meta-item {
+    color: var(--dark-text-secondary);
+}
+.meta-item i {
+    font-size: 1.1rem;
+    color: var(--accent-purple-start);
+    margin-top: 0.2rem;
+}
+body.dark-mode .meta-item i {
+    color: var(--accent-blue-end);
+}
+.profile-bio {
+    font-style: italic;
+    line-height: 1.6;
+}
+
+.profile-activity-card {
+    padding: 2rem;
+}
+
+.profile-stats-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+    border-bottom: 1px solid var(--light-border-color);
+    padding-bottom: 1.5rem;
+}
+body.dark-mode .profile-stats-grid {
+    border-bottom-color: var(--dark-border-color);
+}
+
+.stat-card {
+    background-color: var(--light-bg-primary);
+    padding: 1rem;
+    border-radius: var(--border-radius-md);
+    text-align: center;
+}
+body.dark-mode .stat-card {
+    background-color: var(--dark-bg-primary);
+}
+
+.stat-value {
+    font-size: 2rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+}
+.stat-value .bi-fire {
+    color: #ff9800;
+}
+
+.stat-label {
+    font-size: 0.8rem;
+    color: var(--light-text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+body.dark-mode .stat-label {
+    color: var(--dark-text-secondary);
+}
+
+.profile-activity-card .section-title {
+    font-size: 1.5rem;
+    font-weight: 600;
+}
+
+.profile-comment-card {
+    background-color: var(--light-bg-secondary);
+    border: 1px solid var(--light-border-color);
+    border-radius: var(--border-radius-md);
+    margin-bottom: var(--spacing-sm);
+    transition: all var(--transition-normal);
+    padding: 1rem 1.5rem;
+}
+body.dark-mode .profile-comment-card {
+    background-color: var(--dark-bg-secondary);
+    border-color: var(--dark-border-color);
+}
+.profile-comment-card:hover {
+    transform: translateX(5px);
+    border-left: 4px solid var(--accent-purple-start);
+}
+body.dark-mode .profile-comment-card:hover {
+    border-left-color: var(--accent-blue-end);
 }
