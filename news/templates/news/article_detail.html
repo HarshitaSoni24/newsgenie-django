@@ -51,23 +51,7 @@
                     </div>
                 {% if article.summary %}<div id="preExistingSummary" style="display: none;">{{ article.summary|linebreaksbr }}</div>{% endif %}
 
-                <div class="summary-options-wrapper mt-4 pt-4 border-top">
-                    <h5 class="mb-3 text-center">Summary Length:</h5>
-                    <div class="d-flex justify-content-center gap-3">
-                        <div class="form-check form-check-inline custom-radio">
-                            <input class="form-check-input" type="radio" name="summaryLength" id="shortSummary" value="3" checked>
-                            <label class="form-check-label" for="shortSummary">Short</label>
-                        </div>
-                        <div class="form-check form-check-inline custom-radio">
-                            <input class="form-check-input" type="radio" name="summaryLength" id="mediumSummary" value="5">
-                            <label class="form-check-label" for="mediumSummary">Medium</label>
-                        </div>
-                        <div class="form-check form-check-inline custom-radio">
-                            <input class="form-check-input" type="radio" name="summaryLength" id="longSummary" value="7">
-                            <label class="form-check-label" for="longSummary">Long</label>
-                        </div>
-                    </div>
-                </div>
+                
             </div>
 
             <div id="audioSection" class="app-card audio-card mb-4" style="display:none;">
@@ -239,7 +223,6 @@
         const notUsefulCountElem = document.getElementById('notUsefulCount');
         const summaryFeedbackForm = document.getElementById('summaryFeedbackForm');
 
-        const summaryLengthRadios = document.querySelectorAll('input[name="summaryLength"]');
 
         function getCookie(name) {
             let cookieValue = null;
@@ -301,13 +284,7 @@
                 const btn = this;
                 const originalBtnHtml = btn.innerHTML;
 
-                let selectedSummaryLength = 3;
-                for (const radio of summaryLengthRadios) {
-                    if (radio.checked) {
-                        selectedSummaryLength = radio.value;
-                        break;
-                    }
-                }
+                
 
                 if (articleHasSummaryInitial && preExistingSummaryContent.trim().length > 0) {
                     if (summarySection.style.display === 'none') {
@@ -331,7 +308,7 @@
                         'Content-Type': 'application/json',
                         'X-Requested-With': 'XMLHttpRequest'
                     },
-                    body: JSON.stringify({ sentence_limit: selectedSummaryLength })
+    
                 })
                 .then(response => response.json())
                 .then(data => {

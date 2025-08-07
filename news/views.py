@@ -23,15 +23,12 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from django.views.decorators.cache import cache_page
-from django.views.decorators.vary import vary_on_cookie
 
 logger = logging.getLogger(__name__)
 
 # This is the single, corrected view for your article list.
 @cache_page(60 * 15)
-@vary_on_cookie # THIS IS THE FIX: It tells the cache to be user-aware
 def article_list(request):
-    spotlight_article = Article.objects.filter(is_spotlighted=True, approved=True).first()
     category_filter = request.GET.get("category", "All")
     query = request.GET.get("q", "")
     start_date_str = request.GET.get("start_date")
@@ -41,8 +38,6 @@ def article_list(request):
     sort_by = request.GET.get("sort_by", "-published_at")
 
     articles = Article.objects.filter(approved=True)
-    if spotlight_article:
-        articles = articles.exclude(pk=spotlight_article.pk)
 
     if category_filter and category_filter != "All":
         articles = articles.filter(category__name__iexact=category_filter)
@@ -63,6 +58,7 @@ def article_list(request):
         except ValueError:
             pass
 
+    # Annotate once if any of the dependent filters are used
     if min_likes_str or min_comments_str or sort_by in ["most_popular_likes", "most_popular_comments"]:
         articles = articles.annotate(
             like_count=Count('likes', distinct=True),
@@ -82,6 +78,7 @@ def article_list(request):
         except (ValueError, TypeError):
             pass
 
+    # Apply Sorting
     if sort_by == "most_popular_likes":
         articles = articles.order_by('-like_count', '-published_at')
     elif sort_by == "most_popular_comments":
@@ -107,7 +104,6 @@ def article_list(request):
 
     categories = Category.objects.all()
     context = {
-        "spotlight_article": spotlight_article,
         "articles": page_obj,
         "categories": categories,
         "current_category": category_filter,
@@ -121,6 +117,7 @@ def article_list(request):
         "page_obj": page_obj,
     }
     return render(request, "news/article_list.html", context)
+
 
 # --- YOUR UNTOUCHED API CODE ---
 class ArticleViewSet(viewsets.ReadOnlyModelViewSet):
