@@ -1055,7 +1055,7 @@ body.dark-mode .meta-item i {
     color: var(--accent-blue-end);
 }
 .profile-bio {
-    font-style: italic;
+    font-style: bold;
     line-height: 1.6;
 }
 
@@ -1129,4 +1129,16 @@ body.dark-mode .profile-comment-card {
 }
 body.dark-mode .profile-comment-card:hover {
     border-left-color: var(--accent-blue-end);
+}
+/* === 16. ARTICLE WORD CLOUD (NEW) ========================================== */
+
+.word-cloud-card {
+    background-color: var(--light-bg-primary);
+}
+body.dark-mode .word-cloud-card {
+    background-color: var(--dark-bg-primary);
+}
+
+#wordCloudImage {
+    border-radius: var(--border-radius-md);
 }

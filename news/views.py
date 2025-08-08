@@ -23,6 +23,10 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from django.views.decorators.cache import cache_page
+from django.http import HttpResponse
+from wordcloud import WordCloud
+import io
+import base64
 
 logger = logging.getLogger(__name__)
 
@@ -421,3 +425,36 @@ def reading_history(request):
 def run_scraper_view(request):
     new_articles = fetch_articles()
     return render(request, "news/scraper_status.html", {"new_articles": new_articles})
+
+# NEW FEATURE: View to generate and serve the word cloud image
+def generate_word_cloud_view(request, pk):
+    article = get_object_or_404(Article, pk=pk)
+    text = article.content
+
+    # Basic stopwords to remove common, uninteresting words
+    stopwords = set(['the', 'a', 'in', 'to', 'of', 'and', 'for', 'is', 'on', 'it', 'that', 'was', 'with', 'as', 'at', 'by', 'he', 'she', 'from'])
+
+    try:
+        # Generate the word cloud object
+        # You can customize colors, fonts, size, etc. here
+        wordcloud = WordCloud(
+            width=800, 
+            height=400, 
+            background_color=None, # Transparent background
+            mode="RGBA",
+            stopwords=stopwords,
+            colormap='viridis', # A nice color scheme
+            collocations=False # Avoids grouping words like "New York"
+        ).generate(text)
+
+        # Save the image to an in-memory buffer
+        buffer = io.BytesIO()
+        wordcloud.to_image().save(buffer, format='PNG')
+        
+        # Return the image as an HTTP response
+        return HttpResponse(buffer.getvalue(), content_type='image/png')
+
+    except Exception as e:
+        logger.error(f"Error generating word cloud for article {pk}: {e}")
+        # Return a simple 1x1 pixel transparent image on error
+        return HttpResponse(base64.b64decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII='), content_type='image/png')

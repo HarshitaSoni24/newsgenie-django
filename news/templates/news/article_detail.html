@@ -37,6 +37,9 @@
                     <i class="bi {% if is_liked_by_user %}bi-heart-fill{% else %}bi-heart{% endif %}"></i>
                     <span class="like-count">{{ article.total_likes }}</span>
                 </button>
+                <button id="showWordCloudBtn" class="btn app-btn outline-btn">
+                    <i class="bi bi-cloud-check-fill me-2"></i> View Word Cloud
+                </button>
                 {# Bookmark Button #}
                 <button class="btn app-btn icon-btn bookmark-btn {% if is_bookmarked_by_user %}bookmarked{% endif %}" data-article-id="{{ article.pk }}" {% if not user.is_authenticated %}disabled title="Login to bookmark" {% endif %}>
                     <i class="bi {% if is_bookmarked_by_user %}bi-bookmark-fill{% else %}bi-bookmark{% endif %}"></i>
@@ -62,6 +65,16 @@
                     {% endif %}
                     Your browser does not support the audio element.
                 </audio>
+            </div>
+
+            <div id="wordCloudSection" class="app-card word-cloud-card mb-4" style="display:none;">
+                <h4 class="card-heading"><i class="bi bi-bar-chart-fill me-2"></i> Article Word Cloud</h4>
+                <div class="text-center">
+                    <img id="wordCloudImage" src="" alt="Article Word Cloud" class="img-fluid">
+                    <div id="wordCloudSpinner" class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                </div>
             </div>
 
             <hr class="section-divider my-5">
@@ -658,6 +671,37 @@ document.addEventListener('DOMContentLoaded', function() {
             }, function(err) {
                 console.error('Could not copy text: ', err);
             });
+        });
+    }
+});
+</script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const showWordCloudBtn = document.getElementById('showWordCloudBtn');
+    const wordCloudSection = document.getElementById('wordCloudSection');
+    const wordCloudImage = document.getElementById('wordCloudImage');
+    const wordCloudSpinner = document.getElementById('wordCloudSpinner');
+    const articleId = {{ article.pk }};
+
+    if (showWordCloudBtn) {
+        showWordCloudBtn.addEventListener('click', function() {
+            if (wordCloudSection.style.display === 'none') {
+                wordCloudSection.style.display = 'block';
+                wordCloudImage.style.display = 'none'; // Hide image initially
+                wordCloudSpinner.style.display = 'block'; // Show spinner
+
+                // Set the src to the new URL endpoint to trigger the image generation
+                wordCloudImage.src = `/article/${articleId}/wordcloud/`;
+
+                // Wait for the image to load before showing it
+                wordCloudImage.onload = function() {
+                    wordCloudSpinner.style.display = 'none'; // Hide spinner
+                    wordCloudImage.style.display = 'block'; // Show image
+                };
+            } else {
+                wordCloudSection.style.display = 'none';
+            }
         });
     }
 });
