@@ -18,7 +18,7 @@ from news.models import Article, Category
 from django.core.files.base import ContentFile
 import google.generativeai as genai
 
-genai.configure(api_key=os.environ.get('AIzaSyBUy5p3yU7qR9ARwOLOAMaNOB2W8jNYb7w'))
+genai.configure(api_key=os.environ.get('YOUR API KEY'))
 
 # --- The rest of your code starts here ---
 logger = logging.getLogger(__name__)
