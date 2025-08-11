@@ -1142,3 +1142,51 @@ body.dark-mode .word-cloud-card {
 #wordCloudImage {
     border-radius: var(--border-radius-md);
 }
+/* === COLORFUL FEEDBACK BUTTONS (NEW) ======================================= */
+
+.feedback-form .radio-selection {
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+}
+
+/* Hide the default radio button */
+.feedback-form .custom-radio .form-check-input {
+    display: none;
+}
+
+/* Style the label to look like a button */
+.feedback-form .custom-radio .form-check-label {
+    padding: 0.75rem 1.5rem;
+    border: 2px solid var(--light-border-color);
+    border-radius: var(--border-radius-md);
+    cursor: pointer;
+    font-weight: 600;
+    transition: all var(--transition-normal);
+}
+body.dark-mode .feedback-form .custom-radio .form-check-label {
+    border-color: var(--dark-border-color);
+    color: var(--dark-text-secondary);
+}
+
+/* Style for when the option is hovered over */
+.feedback-form .custom-radio .form-check-label:hover {
+    transform: translateY(-3px);
+    border-color: var(--accent-cyan);
+}
+body.dark-mode .feedback-form .custom-radio .form-check-label:hover {
+    border-color: var(--accent-cyan);
+}
+
+/* This is the colorful style for the SELECTED option */
+.feedback-form .custom-radio .form-check-input:checked + .form-check-label {
+    background: var(--gradient-secondary);
+    color: rgb(125, 123, 208);
+    border-color: transparent;
+    box-shadow: 0 8px 20px -5px rgba(52, 152, 219, 0.5);
+}
+
+.submit-feedback-btn {
+    min-width: 250px;
+    margin-top: 1rem;
+}

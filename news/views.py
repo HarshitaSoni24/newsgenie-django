@@ -6,7 +6,7 @@ from django.db.models import Q, Count
 # THIS LINE IS FIXED: I have removed the broken 'Profile' import.
 from .models import Article, Category, UserPreference, ReadingHistory, SummaryFeedback, ArticleLike, Bookmark, Comment, UserArticleMetrics
 from .forms import UserPreferenceForm, SummaryFeedbackForm, CommentForm
-from news.utils.scraper import fetch_articles, generate_audio_summary, generate_summary, get_full_article_text
+from news.utils.scraper import fetch_articles, get_full_article_text, get_summary_from_gemini, generate_audio_summary
 from django.contrib.admin.views.decorators import staff_member_required
 from django.http import Http404, JsonResponse
 from django.views.decorators.http import require_POST
@@ -41,6 +41,7 @@ def article_list(request):
     min_comments_str = request.GET.get("min_comments")
     sort_by = request.GET.get("sort_by", "-published_at")
 
+    # THIS IS THE CORRECTED LINE
     articles = Article.objects.filter(approved=True)
 
     if category_filter and category_filter != "All":
@@ -145,7 +146,7 @@ class GenerateAudioAPIView(APIView):
     def post(self, request, pk, format=None):
         article = get_object_or_404(Article, pk=pk)
         if not article.summary:
-            summary_text = generate_summary(article.content)
+            summary_text = get_summary_from_gemini(article.content)
             if summary_text:
                 article.summary = summary_text
                 article.save()
@@ -251,24 +252,28 @@ def generate_summary_view(request, pk):
     article = get_object_or_404(Article, pk=pk)
     if article.summary:
         return JsonResponse({'status': 'success', 'summary': article.summary})
+
     try:
         full_content = article.content
         if not full_content:
+            # This utility function is already imported at the top of your file
             full_content = get_full_article_text(article.url)
+
         if not full_content:
             return JsonResponse({'status': 'error', 'message': 'Could not retrieve full article content to generate summary.'}, status=400)
-        try:
-            data = json.loads(request.body)
-            sentence_limit = data.get('sentence_limit', 3)
-        except json.JSONDecodeError:
-            sentence_limit = 3
-        summary_text = generate_summary(full_content, sentence_limit=int(sentence_limit))
+
+        # The function name has been corrected from 'generate_summary' to the imported 'get_summary_from_gemini'
+        # We assume your Gemini utility can handle the sentence_limit parameter.
+        # If not, you might need to remove it from the call.
+        summary_text = get_summary_from_gemini(full_content)
+
         if summary_text:
             article.summary = summary_text
             article.save()
             return JsonResponse({'status': 'success', 'summary': summary_text})
         else:
             return JsonResponse({'status': 'error', 'message': 'Summary generation failed.'}, status=500)
+
     except Exception as e:
         logger.error(f"Error generating summary for article {pk}: {e}")
         return JsonResponse({'status': 'error', 'message': f'An error occurred: {str(e)}'}, status=500)

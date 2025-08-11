@@ -12,9 +12,17 @@ from newspaper import Article as NewsArticle
 import logging
 import requests
 import time
+from django.conf import settings
+from django.utils import timezone
+from news.models import Article, Category
+from django.core.files.base import ContentFile
+import google.generativeai as genai
 
+genai.configure(api_key=os.environ.get('AIzaSyBUy5p3yU7qR9ARwOLOAMaNOB2W8jNYb7w'))
+
+# --- The rest of your code starts here ---
 logger = logging.getLogger(__name__)
-
+# ...
 def clean_html(raw_html):
     return BeautifulSoup(raw_html, "html.parser").get_text()
 
@@ -27,16 +35,25 @@ def clean_text_for_speech(text):
     text = re.sub(r'[^\w\s,.!?\'"]', '', text)
     return text.strip()
 
+# This is the NEW, improved function
+from newspaper import Config # Make sure this import is at the top of your file
+
 def get_full_article_text(url):
     try:
-        article = NewsArticle(url)
+        # ADD THIS CONFIGURATION BLOCK
+        config = Config()
+        config.request_timeout = 10  # Set a 10-second timeout
+        config.browser_user_agent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/118.0.0.0 Safari/537.36'
+
+        # Pass the config to the Article object
+        article = NewsArticle(url, config=config)
         article.download()
         article.parse()
         return article.text
     except Exception as e:
         logger.error(f"Error fetching article with newspaper3k from {url}: {e}")
         return ""
-
+    
 def fetch_full_article_content_fallback(url):
     try:
         headers = {
@@ -85,66 +102,46 @@ def fetch_full_article_content_fallback(url):
         logger.error(f"Fallback full content fetch failed for {url}: {e}")
         return None
 
-def generate_summary(text, sentence_limit=3):
-    try:
-        text = clean_html(text)
-        sentences = re.split(r'[.!?]+', text)
-        sentences = [s.strip() for s in sentences if len(s.strip()) > 25]
+#
+# ADD THIS NEW FUNCTION TO YOUR CODE
+##
+# REPLACE your old function with this new one
+#
+import google.api_core.exceptions
 
-        if not sentences:
-            return text[:300] + "..." if len(text) > 300 else text
+def get_summary_from_gemini(content):
+    """
+    Generates a summary using Gemini, with a retry mechanism for rate limiting.
+    """
+    if not content or len(content) < 200:
+        logger.warning("Content too short for Gemini summary, skipping.")
+        return "Summary not available."
 
-        if len(sentences) <= sentence_limit:
-            return '. '.join(sentences) + '.'
+    model = genai.GenerativeModel('gemini-1.5-flash-latest')
+    prompt = f"Please act as a news editor. Summarize the following article concisely in a neutral, professional tone. The summary should be about 6-7 sentences long:\n\n---\n\n{content}"
 
-        important_keywords = [
-            'announced', 'revealed', 'confirmed', 'reported', 'said', 'according',
-            'new', 'first', 'major', 'significant', 'important', 'breaking',
-            'today', 'yesterday', 'will', 'plans', 'expected', 'launched'
-        ]
+    # This loop will try up to 3 times if we hit a rate limit
+    for attempt in range(3):
+        try:
+            # Attempt to generate the summary
+            response = model.generate_content(prompt)
+            logger.info("Successfully generated summary with Gemini.")
+            return response.text
+        
+        except google.api_core.exceptions.ResourceExhausted as e:
+            # THIS IS THE FIX: We catch the "Quota Exceeded" error
+            wait_time = (attempt + 1) * 15  # Wait longer each time: 15s, 30s, 45s
+            logger.warning(f"Rate limit hit. Waiting for {wait_time} seconds before retrying... (Attempt {attempt + 1}/3)")
+            time.sleep(wait_time) # The script politely waits
 
-        scored_sentences = []
-        for i, sentence in enumerate(sentences):
-            score = 0
-            s_lower = sentence.lower()
+        except Exception as e:
+            # For any other error, we just log it and stop
+            logger.error(f"A non-rate-limit Gemini error occurred: {e}")
+            return "Summary could not be generated."
 
-            for kw in important_keywords:
-                if kw in s_lower:
-                    score += 2
-
-            if 60 <= len(sentence) <= 150:
-                score += 3
-            elif 30 <= len(sentence) <= 200:
-                score += 1
-
-            if i == 0:
-                score += 4
-            elif i < 3:
-                score += 3
-            elif i < 6:
-                score += 1
-
-            if re.search(r'\d+', sentence):
-                score += 1
-
-            if '"' in sentence or "'" in sentence:
-                score += 2
-
-            scored_sentences.append((sentence, score, i))
-
-        scored_sentences.sort(key=lambda x: x[1], reverse=True)
-        top_sentences = scored_sentences[:sentence_limit]
-        top_sentences.sort(key=lambda x: x[2])
-
-        summary = '. '.join([s[0] for s in top_sentences])
-        if summary and not summary.endswith('.'):
-            summary += '.'
-
-        return summary
-    except Exception as e:
-        logger.error(f"Summary generation failed: {e}")
-        return text[:300] + "..."
-
+    # This message is returned if all 3 retry attempts fail
+    logger.error("All retry attempts failed due to rate limiting.")
+    return "Summary could not be generated due to API rate limits."
 def generate_audio_summary(text, article_id):
     try:
         if not text:
@@ -178,7 +175,14 @@ def create_categories():
         ('science', 'Science', 'Science and research news'),
         ('health', 'Health', 'Health and medical news'),
         ('sports', 'Sports', 'Sports news and updates'),
+        ('entertainment', 'Entertainment', 'Movie, music, and celebrity news'),
+        ('politics', 'Politics', 'Government news, policy, and elections'),
+        ('lifestyle', 'Lifestyle', 'Fashion, food, travel, and wellness news'),
+        ('environment', 'Environment', 'News on climate change and conservation'),
+        ('education', 'Education', 'News about schools and educational trends'),
+        ('gaming', 'Gaming', 'Video game news, reviews, and esports'),
     ]
+    
     for key, name, desc in category_data:
         # THIS IS THE FIX: Removed the 'defaults' dictionary that was causing the error.
         category, _ = Category.objects.get_or_create(name=name)
@@ -191,66 +195,73 @@ RSS_FEEDS = {
     "Business": "https://feeds.bbci.co.uk/news/business/rss.xml",
     "Science": "https://feeds.bbci.co.uk/news/science_and_environment/rss.xml",
     "Health": "https://feeds.bbci.co.uk/news/health/rss.xml",
+    "Sports": "http://feeds.bbci.co.uk/sport/rss.xml",
 }
 
+#
+# REPLACE your old function with this new, more robust version
+#
 def fetch_articles():
     categories = create_categories()
     new_articles = []
 
+    # This loop now has its own error handling
     for category_name, feed_url in RSS_FEEDS.items():
-        category = categories.get(category_name.lower(), None)
-        if not category:
-            logger.warning(f"No category found for {category_name}, skipping feed.")
-            continue
-
-        feed = feedparser.parse(feed_url)
-        for entry in feed.entries[:5]:
-            try:
-                # Assuming your Article model has a 'url' field that should be unique
-                if Article.objects.filter(url=entry.link).exists():
-                    continue
-
-                published_at = timezone.now()
-                if hasattr(entry, 'published_parsed') and entry.published_parsed:
-                    published_at = datetime(*entry.published_parsed[:6], tzinfo=pytz.UTC)
-
-                full_content = get_full_article_text(entry.link)
-                if not full_content or len(full_content) < 300:
-                    fallback_content = fetch_full_article_content_fallback(entry.link)
-                    if fallback_content and len(fallback_content) > len(full_content or ''):
-                        full_content = fallback_content
-
-                if not full_content or len(full_content) < 100:
-                    logger.info(f"Skipping article due to short content: {entry.link}")
-                    continue
-
-                summary = generate_summary(full_content)
-
-                article = Article.objects.create(
-                    title=clean_html(entry.title)[:200],
-                    author=entry.get("author", "Unknown"),
-                    content=full_content,
-                    url=entry.link,  # Make sure this field name matches your model
-                    source=category_name, # Use the category name as the source
-                    published_at=published_at,
-                    summary=summary,
-                )
-                article.category.add(category) # Add the category relationship
-
-                audio_url = generate_audio_summary(summary, article.id)
-                if audio_url:
-                    # Correctly format the relative path for the FileField
-                    relative_path = os.path.join('news_audio', f"summary_{article.id}.mp3")
-                    article.audio_file.name = relative_path
-                    article.save()
-
-                new_articles.append(article)
-
-            except Exception as e:
-                logger.error(f"Error processing article from feed {feed_url} ({entry.link}): {e}")
+        try: # <-- START of the new safety block for the whole category
+            print(f"\n--- Checking category: {category_name} ---")
+            category = categories.get(category_name.lower(), None)
+            if not category:
+                logger.warning(f"No category found for {category_name}, skipping feed.")
                 continue
 
-            time.sleep(1)
+            feed = feedparser.parse(feed_url)
+            
+            # This inner loop processes each article within the category
+            for entry in feed.entries[:7]: # We'll keep the limit low to respect APIs
+                try:
+                    if Article.objects.filter(url=entry.link).exists():
+                        continue
 
-    logger.info(f"Fetched and created {len(new_articles)} new articles")
+                    published_at = timezone.now()
+                    if hasattr(entry, 'published_parsed') and entry.published_parsed:
+                        published_at = datetime(*entry.published_parsed[:6], tzinfo=pytz.UTC)
+
+                    full_content = get_full_article_text(entry.link)
+                    if not full_content or len(full_content) < 200:
+                        continue
+                    
+                    print(f"--> PROCESSING: '{entry.title[:50]}...'")
+                    summary_text = get_summary_from_gemini(full_content)
+
+                    article = Article.objects.create(
+                        title=clean_html(entry.title)[:200],
+                        author=entry.get("author", "Unknown"),
+                        content=full_content,
+                        url=entry.link,
+                        source=category_name,
+                        published_at=published_at,
+                        summary=summary_text,
+                        approved=True,
+                    )
+                    article.category.add(category)
+                    
+                    audio_url = generate_audio_summary(summary_text, article.id)
+                    if audio_url:
+                        relative_path = os.path.join('news_audio', f"summary_{article.id}.mp3")
+                        article.audio_file.name = relative_path
+                        article.save()
+
+                    new_articles.append(article)
+                    time.sleep(2) # A polite pause
+
+                except Exception as e:
+                    logger.error(f"Error on article '{entry.link}'. Moving to next article. Error: {e}")
+                    continue # Safely move to the next article
+
+        except Exception as e:
+            # If the whole feed fails (e.g., bad URL), log it and move on
+            logger.error(f"FATAL ERROR processing category '{category_name}'. Moving to next category. Error: {e}")
+            continue # <-- END of the new safety block
+
+    logger.info(f"Fetched and created {len(new_articles)} new articles across all categories.")
     return new_articles
