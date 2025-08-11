@@ -120,3 +120,15 @@ class UserArticleMetrics(models.Model):
 
     def __str__(self):
         return f"Metrics for {self.user.username} on {self.article.title[:30]}..."
+    
+class FAQ(models.Model):
+    keywords = models.CharField(max_length=255, help_text="Comma-separated keywords that will trigger this answer (e.g., password, reset, change password).")
+    answer = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"FAQ for keywords: {self.keywords}"
+
+    class Meta:
+        verbose_name = "FAQ / Chatbot Entry"
+        verbose_name_plural = "FAQ / Chatbot Entries"

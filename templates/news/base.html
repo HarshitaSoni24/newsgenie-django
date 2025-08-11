@@ -15,52 +15,52 @@
 <body class="{{ request.COOKIES.theme|default:'light' }}-mode">
 
     <header class="app-navbar navbar navbar-expand-lg sticky-top">
-    <div class="container">
-        <a class="navbar-brand navbar-brand-custom" href="{% url 'news:homepage' %}">NewsGenie AI</a>
-        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
-            <span class="navbar-toggler-icon"></span>
-        </button>
-        <div class="collapse navbar-collapse" id="navbarNav">
-            <ul class="navbar-nav ms-auto align-items-center">
-                {% if user.is_authenticated %}
-                    <li class="nav-item">
-                        <a class="nav-link nav-link-custom" href="{% url 'news:article_list' %}">Articles</a>
+        <div class="container">
+            <a class="navbar-brand navbar-brand-custom" href="{% url 'news:homepage' %}">NewsGenie AI</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto align-items-center">
+                    {% if user.is_authenticated %}
+                        <li class="nav-item">
+                            <a class="nav-link nav-link-custom" href="{% url 'news:article_list' %}">Articles</a>
+                        </li>
+                        <li class="nav-item dropdown">
+                            <a class="nav-link nav-link-custom dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                <i class="bi bi-person-circle me-1"></i> 
+                                {{ user.username }}
+                                <span class="streak-indicator ms-2">
+                                    <i class="bi bi-fire"></i> {{ user.profile.streak_count }}
+                                </span>
+                            </a>
+                            <ul class="dropdown-menu dropdown-menu-end app-dropdown-menu" aria-labelledby="navbarDropdown">
+                                <li><a class="dropdown-item dropdown-item-custom" href="{% url 'users:profile' user.username %}"><i class="bi bi-person-fill"></i> My Profile</a></li>
+                                <li><a class="dropdown-item dropdown-item-custom" href="{% url 'news:preferences' %}"><i class="bi bi-sliders"></i> Preferences</a></li>
+                                <li><a class="dropdown-item dropdown-item-custom" href="{% url 'news:recommendations' %}"><i class="bi bi-magic"></i> Recommendations</a></li>
+                                <li><a class="dropdown-item dropdown-item-custom" href="{% url 'news:history' %}"><i class="bi bi-clock-history"></i> Reading History</a></li>
+                                <li><a class="dropdown-item dropdown-item-custom" href="{% url 'news:bookmarks' %}"><i class="bi bi-bookmark-heart-fill"></i> My Bookmarks</a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item dropdown-item-custom" href="{% url 'users:logout' %}"><i class="bi bi-box-arrow-right"></i> Logout</a></li>
+                            </ul>
+                        </li>
+                    {% else %}
+                        <li class="nav-item">
+                            <a class="nav-link nav-link-custom" href="{% url 'users:login' %}">Login</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="btn app-btn primary-btn ms-2" href="{% url 'users:register' %}">Register</a>
+                        </li>
+                    {% endif %}
+                    <li class="nav-item ms-3">
+                        <button id="theme-toggle" class="btn theme-toggle-btn">
+                            <i class="bi bi-moon-stars-fill"></i>
+                        </button>
                     </li>
-                    <li class="nav-item dropdown">
-                        <a class="nav-link nav-link-custom dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                            <i class="bi bi-person-circle me-1"></i> 
-                            {{ user.username }}
-                            <span class="streak-indicator ms-2">
-                                <i class="bi bi-fire"></i> {{ user.profile.streak_count }}
-                            </span>
-                        </a>
-                        <ul class="dropdown-menu dropdown-menu-end app-dropdown-menu" aria-labelledby="navbarDropdown">
-                            <li><a class="dropdown-item dropdown-item-custom" href="{% url 'users:profile' user.username %}"><i class="bi bi-person-fill"></i> My Profile</a></li>
-                            <li><a class="dropdown-item dropdown-item-custom" href="{% url 'news:preferences' %}"><i class="bi bi-sliders"></i> Preferences</a></li>
-                            <li><a class="dropdown-item dropdown-item-custom" href="{% url 'news:recommendations' %}"><i class="bi bi-magic"></i> Recommendations</a></li>
-                            <li><a class="dropdown-item dropdown-item-custom" href="{% url 'news:history' %}"><i class="bi bi-clock-history"></i> Reading History</a></li>
-                            <li><a class="dropdown-item dropdown-item-custom" href="{% url 'news:bookmarks' %}"><i class="bi bi-bookmark-heart-fill"></i> My Bookmarks</a></li>
-                            <li><hr class="dropdown-divider"></li>
-                            <li><a class="dropdown-item dropdown-item-custom" href="{% url 'users:logout' %}"><i class="bi bi-box-arrow-right"></i> Logout</a></li>
-                        </ul>
-                    </li>
-                {% else %}
-                    <li class="nav-item">
-                        <a class="nav-link nav-link-custom" href="{% url 'users:login' %}">Login</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="btn app-btn primary-btn ms-2" href="{% url 'users:register' %}">Register</a>
-                    </li>
-                {% endif %}
-                <li class="nav-item ms-3">
-                    <button id="theme-toggle" class="btn theme-toggle-btn">
-                        <i class="bi bi-moon-stars-fill"></i>
-                    </button>
-                </li>
-            </ul>
+                </ul>
+            </div>
         </div>
-    </div>
-</header>
+    </header>
 
     <main class="container my-5 app-content-wrapper">
         {% if messages %}
@@ -74,6 +74,26 @@
         {% block content %}{% endblock %}
     </main>
 
+    <div id="chatbot-container">
+        <div id="chatbot-window" class="app-card">
+            <div id="chatbot-header">
+                <h5><i class="bi bi-robot me-2"></i> NewsGenie Assistant</h5>
+                <button id="close-chatbot" class="btn-close"></button>
+            </div>
+            <div id="chatbot-messages">
+                <div class="message bot-message">
+                    <p>Hello! How can I help you today?</p>
+                </div>
+            </div>
+            <div id="chatbot-input-container">
+                <input type="text" id="chatbot-input" placeholder="Ask a question..." autocomplete="off">
+                <button id="chatbot-send-btn"><i class="bi bi-send-fill"></i></button>
+            </div>
+        </div>
+        <button id="chatbot-toggle-btn" class="app-btn secondary-btn">
+            <i class="bi bi-chat-dots-fill"></i>
+        </button>
+    </div>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function () {
@@ -91,15 +111,11 @@
                 document.cookie = name + "=" + (value || "")  + expires + "; path=/";
             }
 
-             function updateIcon(theme) {
-                // The icon should show the OPPOSITE of the current theme
-                // If the theme is dark, show the sun icon to switch to light.
+            function updateIcon(theme) {
                 if (theme === 'dark') {
                     themeIcon.classList.remove('bi-moon-stars-fill');
                     themeIcon.classList.add('bi-sun-fill');
-                } 
-                // If the theme is light, show the moon icon to switch to dark.
-                else { 
+                } else {
                     themeIcon.classList.remove('bi-sun-fill');
                     themeIcon.classList.add('bi-moon-stars-fill');
                 }
@@ -122,6 +138,97 @@
             });
         });
     </script>
-    {% block extra_js %}{% endblock %}
+    {% block extra_js %}
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const chatbotToggleBtn = document.getElementById('chatbot-toggle-btn');
+        const chatbotWindow = document.getElementById('chatbot-window');
+        const closeChatbotBtn = document.getElementById('close-chatbot');
+        const chatbotMessages = document.getElementById('chatbot-messages');
+        const chatbotInput = document.getElementById('chatbot-input');
+        const chatbotSendBtn = document.getElementById('chatbot-send-btn');
+
+        function toggleChatbot() {
+            if (chatbotWindow.style.display === 'none' || chatbotWindow.style.display === '') {
+                chatbotWindow.style.display = 'flex';
+            } else {
+                chatbotWindow.style.display = 'none';
+            }
+        }
+
+        if (chatbotToggleBtn) {
+            chatbotToggleBtn.addEventListener('click', toggleChatbot);
+        }
+        if (closeChatbotBtn) {
+            closeChatbotBtn.addEventListener('click', toggleChatbot);
+        }
+
+        function addMessage(message, sender) {
+            const messageDiv = document.createElement('div');
+            messageDiv.classList.add('message', sender === 'bot' ? 'bot-message' : 'user-message');
+            const p = document.createElement('p');
+            p.innerHTML = message; // Use innerHTML to render links from the bot
+            messageDiv.appendChild(p);
+            chatbotMessages.appendChild(messageDiv);
+            chatbotMessages.scrollTop = chatbotMessages.scrollHeight; // Auto-scroll to bottom
+        }
+
+        function getBotResponse(userMessage) {
+            addMessage(userMessage, 'user');
+            
+            fetch("{% url 'news:chatbot_response' %}", {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken')
+                },
+                body: JSON.stringify({ message: userMessage })
+            })
+            .then(response => response.json())
+            .then(data => {
+                addMessage(data.answer, 'bot');
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                addMessage("Sorry, something went wrong. Please try again later.", 'bot');
+            });
+        }
+
+        if (chatbotSendBtn) {
+            chatbotSendBtn.addEventListener('click', () => {
+                const message = chatbotInput.value.trim();
+                if (message) {
+                    getBotResponse(message);
+                    chatbotInput.value = '';
+                }
+            });
+        }
+        
+        if (chatbotInput) {
+            chatbotInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    chatbotSendBtn.click();
+                }
+            });
+        }
+
+        // Helper function to get CSRF token (already in your theme script, but good to have here too)
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+    });
+    </script>
+    {% endblock %}
 </body>
 </html>

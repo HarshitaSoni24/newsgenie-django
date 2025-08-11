@@ -3,7 +3,7 @@ from django.db.models import Count, Sum, Max, Avg, F, Q # Import Avg and Q
 from django.utils.html import format_html
 from django.urls import reverse
 from django.contrib.admin import RelatedOnlyFieldListFilter 
-from .models import Article, Category, UserPreference, ReadingHistory, SummaryFeedback, ArticleLike, Bookmark, Comment, UserArticleMetrics
+from .models import FAQ, Article, Category, UserPreference, ReadingHistory, SummaryFeedback, ArticleLike, Bookmark, Comment, UserArticleMetrics
 
 class ArticleAdmin(admin.ModelAdmin):
     list_display = ('title', 'source', 'published_at', 'author', 'approved_status', 'total_likes', 'total_comments')
@@ -157,6 +157,12 @@ class UserArticleMetricsAdmin(admin.ModelAdmin):
     list_filter = ('last_tracked_at',)
     search_fields = ('user__username', 'article__title')
     readonly_fields = ('last_tracked_at',)
+
+# NEW: Register the FAQ model with the admin site
+@admin.register(FAQ)
+class FAQAdmin(admin.ModelAdmin):
+    list_display = ('keywords', 'answer', 'created_at')
+    search_fields = ('keywords', 'answer')
 
 admin.site.register(Article, ArticleAdmin)
 admin.site.register(Category)

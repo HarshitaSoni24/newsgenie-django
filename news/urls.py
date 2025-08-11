@@ -10,6 +10,7 @@ urlpatterns = [
     
      # NEW FEATURE: URL for generating the word cloud image
     path('article/<int:pk>/wordcloud/', views.generate_word_cloud_view, name="word_cloud"),
+    path('chatbot/', views.chatbot_response, name='chatbot_response'),
 
     path('article/<int:pk>/generate-summary/', views.generate_summary_view, name="generate_summary"),
     path('article/<int:pk>/generate-audio/', views.generate_audio_view, name="generate_audio"),

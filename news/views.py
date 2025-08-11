@@ -4,7 +4,7 @@ from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
 from django.db.models import Q, Count
 # THIS LINE IS FIXED: I have removed the broken 'Profile' import.
-from .models import Article, Category, UserPreference, ReadingHistory, SummaryFeedback, ArticleLike, Bookmark, Comment, UserArticleMetrics
+from .models import FAQ, Article, Category, UserPreference, ReadingHistory, SummaryFeedback, ArticleLike, Bookmark, Comment, UserArticleMetrics
 from .forms import UserPreferenceForm, SummaryFeedbackForm, CommentForm
 from news.utils.scraper import fetch_articles, get_full_article_text, get_summary_from_gemini, generate_audio_summary
 from django.contrib.admin.views.decorators import staff_member_required
@@ -23,6 +23,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from django.views.decorators.cache import cache_page
+from django.db.models import Case, When # Add these new imports
 from django.http import HttpResponse
 from wordcloud import WordCloud
 import io
@@ -463,3 +464,49 @@ def generate_word_cloud_view(request, pk):
         logger.error(f"Error generating word cloud for article {pk}: {e}")
         # Return a simple 1x1 pixel transparent image on error
         return HttpResponse(base64.b64decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII='), content_type='image/png')
+    
+
+@require_POST
+def chatbot_response(request):
+    try:
+        data = json.loads(request.body)
+        user_message = data.get('message', '').lower().strip()
+
+        if not user_message:
+            return JsonResponse({'answer': "I'm sorry, I didn't get that. Could you ask again?"})
+
+        # Split the user message into individual words
+        user_keywords = user_message.split()
+        
+        # Find all FAQs that have at least one keyword matching the user's message
+        # This uses a Q object to create a complex OR query
+        keyword_query = Q()
+        for keyword in user_keywords:
+            keyword_query |= Q(keywords__icontains=keyword)
+
+        possible_faqs = FAQ.objects.filter(keyword_query)
+
+        if not possible_faqs:
+            return JsonResponse({'answer': "I'm sorry, I don't have an answer for that yet. Please try asking in a different way."})
+
+        # Score the possible FAQs to find the best match
+        best_faq = None
+        highest_score = 0
+        for faq in possible_faqs:
+            faq_keywords = [kw.strip().lower() for kw in faq.keywords.split(',')]
+            score = 0
+            for user_word in user_keywords:
+                if user_word in faq_keywords:
+                    score += 1
+            if score > highest_score:
+                highest_score = score
+                best_faq = faq
+        
+        if best_faq:
+            return JsonResponse({'answer': best_faq.answer})
+        else:
+            # Fallback if no keyword matches were strong enough
+            return JsonResponse({'answer': "I'm sorry, I'm not sure how to help with that. Could you be more specific?"})
+
+    except json.JSONDecodeError:
+        return JsonResponse({'error': 'Invalid JSON'}, status=400)
