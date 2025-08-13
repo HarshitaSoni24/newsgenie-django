@@ -19,7 +19,7 @@
                     {% endif %}
                 </h2>
                 <p class="profile-username-display">@{{ profile_user.username }}</p>
-
+                    
                 {% if request.user == profile_user %}
                     <a href="{% url 'users:edit_profile' %}" class="btn app-btn secondary-btn mt-3"><i class="bi bi-pencil-fill me-2"></i> Edit Profile</a>
                 {% endif %}
@@ -47,10 +47,12 @@
 
         <div class="col-lg-8">
             <div class="app-card profile-activity-card">
+                
+                <h3 class="section-title mb-3">User Stats</h3>
                 <div class="profile-stats-grid mb-4">
                     <div class="stat-card">
                         <div class="stat-value">{{ user_comments.count }}</div>
-                        <div class="stat-label">Total Comments</div>
+                        <div class="stat-label">Comments Made</div>
                     </div>
                     <div class="stat-card">
                         <div class="stat-value">
@@ -58,8 +60,31 @@
                         </div>
                         <div class="stat-label">Reading Streak</div>
                     </div>
+                    <div class="stat-card">
+                        <div class="stat-value text-success">
+                            <i class="bi bi-hand-thumbs-up-fill"></i> {{ useful_count }}
+                        </div>
+                        <div class="stat-label">
+                            {% if request.user == profile_user %}
+                                <a href="{% url 'users:useful-articles-list' %}">Useful Articles</a>
+                            {% else %}
+                                Useful Articles
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value text-danger">
+                            <i class="bi bi-hand-thumbs-down-fill"></i> {{ not_useful_count }}
+                        </div>
+                        <div class="stat-label">
+                            {% if request.user == profile_user %}
+                                <a href="{% url 'users:not-useful-articles-list' %}">Not Useful Articles</a>
+                            {% else %}
+                                Not Useful Articles
+                            {% endif %}
+                        </div>
+                    </div>
                 </div>
-
                 <h3 class="section-title mb-3">Recent Activity</h3>
                 {% if user_comments %}
                     <div class="list-group">

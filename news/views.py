@@ -15,6 +15,7 @@ from django.conf import settings
 import os
 import logging
 import json
+from .models import CommentReaction 
 from datetime import datetime
 from rest_framework import viewsets, permissions
 from rest_framework.permissions import IsAuthenticated
@@ -510,3 +511,84 @@ def chatbot_response(request):
 
     except json.JSONDecodeError:
         return JsonResponse({'error': 'Invalid JSON'}, status=400)
+# Add these imports at the top of final_bytenews/newsgenie-django/news/views.py
+from django.shortcuts import get_object_or_404, redirect
+from django.contrib.auth.decorators import login_required
+from .models import Article, ArticleFeedback # Make sure ArticleFeedback is imported
+
+
+
+@login_required
+def article_feedback(request, article_id):
+    """
+    Handles the submission of 'Useful'/'Not Useful' feedback for an article.
+    """
+    article = get_object_or_404(Article, id=article_id)
+    is_useful = request.POST.get('feedback') == 'useful'
+
+    feedback, created = ArticleFeedback.objects.update_or_create(
+        user=request.user,
+        article=article,
+        defaults={'is_useful': is_useful}
+    )
+
+    if created:
+        messages.success(request, "Thank you for your feedback!")
+    else:
+        messages.info(request, "Your feedback has been updated.")
+
+    # --- THIS IS THE FIX ---
+    # Change 'article-detail' to 'news:detail' to match your app's namespace
+    return redirect('news:detail', pk=article.id)
+
+# ... (all your other imports and views remain the same) ...
+
+# NEW FEATURE: View to handle toggling a reaction on a comment
+@login_required
+@require_POST
+def toggle_comment_reaction(request, pk):
+    comment = get_object_or_404(Comment, pk=pk)
+    try:
+        data = json.loads(request.body)
+        reaction_type = data.get('reaction_type')
+
+        # Validate the reaction type
+        valid_reactions = [choice[0] for choice in CommentReaction.REACTION_CHOICES]
+        if reaction_type not in valid_reactions:
+            return JsonResponse({'status': 'error', 'message': 'Invalid reaction type.'}, status=400)
+
+        # Remove any other existing reactions by this user on this comment
+        # This makes it so a user can only "like" OR "love", not both.
+        CommentReaction.objects.filter(comment=comment, user=request.user).delete()
+
+        # Create the new reaction
+        reaction, created = CommentReaction.objects.get_or_create(
+            comment=comment,
+            user=request.user,
+            reaction_type=reaction_type
+        )
+        
+        # If the reaction already existed, it means the user clicked it again to remove it.
+        # The delete() above handles changing reactions, this handles toggling off.
+        # A simpler toggle might just create/delete one reaction type at a time.
+        # This implementation is a "one reaction per user" system.
+
+        # Recalculate all reaction counts for this comment
+        reaction_counts = dict(Comment.objects.filter(pk=comment.pk).annotate(
+            like_count=Count('reactions', filter=Q(reactions__reaction_type='like')),
+            love_count=Count('reactions', filter=Q(reactions__reaction_type='love')),
+            laugh_count=Count('reactions', filter=Q(reactions__reaction_type='laugh')),
+            idea_count=Count('reactions', filter=Q(reactions__reaction_type='idea')),
+        ).values('like_count', 'love_count', 'laugh_count', 'idea_count')[0])
+
+
+        return JsonResponse({
+            'status': 'success',
+            'reaction_counts': reaction_counts
+        })
+
+    except json.JSONDecodeError:
+        return JsonResponse({'status': 'error', 'message': 'Invalid JSON.'}, status=400)
+    except Exception as e:
+        logger.error(f"Error toggling comment reaction: {e}")
+        return JsonResponse({'status': 'error', 'message': 'An unexpected error occurred.'}, status=500)

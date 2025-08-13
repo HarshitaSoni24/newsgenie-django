@@ -132,3 +132,37 @@ class FAQ(models.Model):
     class Meta:
         verbose_name = "FAQ / Chatbot Entry"
         verbose_name_plural = "FAQ / Chatbot Entries"
+# Add this at the end of final_bytenews/newsgenie-django/news/models.py
+
+class ArticleFeedback(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    article = models.ForeignKey(Article, on_delete=models.CASCADE)
+    is_useful = models.BooleanField()
+
+    class Meta:
+        # This ensures a user can only give one piece of feedback per article
+        unique_together = ('user', 'article')
+
+    def __str__(self):
+        return f"{self.user.username} - {self.article.title} - {'Useful' if self.is_useful else 'Not Useful'}"
+
+class CommentReaction(models.Model):
+    # Define the types of reactions available
+    REACTION_CHOICES = [
+        ('like', '👍'),
+        ('love', '❤️'),
+        ('laugh', '😂'),
+        ('idea', '💡'),
+    ]
+
+    comment = models.ForeignKey(Comment, on_delete=models.CASCADE, related_name='reactions')
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    reaction_type = models.CharField(max_length=10, choices=REACTION_CHOICES)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        # A user can only have one type of reaction per comment
+        unique_together = ('comment', 'user', 'reaction_type')
+
+    def __str__(self):
+        return f'{self.user.username} reacted with {self.reaction_type} to comment {self.comment.id}'

@@ -1,41 +1,53 @@
 {% extends 'news/base.html' %}
+{% load humanize %}
 
 {% block title %}Edit Profile{% endblock %}
 
 {% block content %}
-<div class="row justify-content-center">
-    <div class="col-md-8">
-        <div class="app-card p-5">
-            <h2 class="text-center mb-4">Edit Your Profile</h2>
-            <form method="POST" class="auth-form">
-                {% csrf_token %}
-                
-                <h4 class="form-section-title">Public Information</h4>
-                <div class="form-group mb-3">
-                    <label for="id_first_name">First Name:</label>
-                    {{ user_form.first_name }}
-                </div>
-                <div class="form-group mb-3">
-                    <label for="id_last_name">Last Name:</label>
-                    {{ user_form.last_name }}
-                </div>
-                <div class="form-group mb-4">
-                    <label for="id_bio">Bio:</label>
-                    {{ profile_form.bio }}
-                </div>
-                
-                <hr class="my-4">
-                
-                <h4 class="form-section-title">Private Information</h4>
-                <div class="form-group mb-3">
-                    <label for="id_email">Email:</label>
-                    {{ user_form.email }}
-                </div>
+<div class="container app-main-container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8 col-md-10">
 
-                <div class="d-grid mt-4">
-                    <button type="submit" class="btn app-btn primary-btn">Save Changes</button>
-                </div>
-            </form>
+            <div class="app-card auth-card">
+                <h2 class="auth-title text-center mb-4">Edit Your Profile</h2>
+
+                <form method="POST" enctype="multipart/form-data" class="auth-form">
+                    {% csrf_token %}
+                    
+                    <fieldset class="form-group">
+                        <legend class="border-bottom mb-4 pb-2">Profile Info</legend>
+                        
+                        {% for field in u_form %}
+                            <div class="mb-3">
+                                <label for="{{ field.id_for_label }}" class="form-label">{{ field.label }}</label>
+                                {{ field }}
+                                {% if field.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ field.errors|first }}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        {% endfor %}
+
+                        {% for field in p_form %}
+                            <div class="mb-3">
+                                <label for="{{ field.id_for_label }}" class="form-label">{{ field.label }}</label>
+                                {{ field }}
+                                {% if field.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ field.errors|first }}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        {% endfor %}
+                    </fieldset>
+                    
+                    <div class="form-group mt-4 d-flex justify-content-between align-items-center">
+                        <button type="submit" class="btn app-btn primary-btn">Save Changes</button>
+                        <a href="{% url 'users:profile' username=user.username %}" class="btn app-btn outline-btn">Cancel</a>
+                    </div>
+                </form>
+            </div>
         </div>
     </div>
 </div>

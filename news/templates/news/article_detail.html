@@ -5,11 +5,10 @@
 {% block title %}{{ article.title }}{% endblock %}
 
 {% block content %}
-<div class="container app-main-container mt-5"> {# Main wrapper for consistent styling #}
+<div class="container app-main-container mt-5">
     <div class="article-header-section text-center mb-5">
         <h1 class="article-title-heading">{{ article.title }}</h1>
         <p class="article-meta-text">By {{ article.author }} on {{ article.published_at|date:"F d, Y" }}</p>
-
         <div class="category-badges mt-3">
             {% for category in article.category.all %}
                 <span class="badge category-pill me-2">{{ category.name }}</span>
@@ -20,41 +19,33 @@
     <div class="row justify-content-center mb-5">
         <div class="col-lg-10 col-md-12">
             <div class="action-buttons-wrapper text-center mb-4">
-                {# Generate Summary button always visible if content exists #}
                 {% if article.content %}
                     <button id="generateSummaryBtn" class="btn app-btn primary-btn">
                         <i class="bi bi-robot me-2"></i> {% if article.summary %}View Summary{% else %}Generate Summary{% endif %}
                     </button>
                 {% endif %}
-                {# Generate Audio button is always visible if summary exists #}
                 {% if article.summary %}
                     <button id="generateAudioBtn" class="btn app-btn secondary-btn">
                         <i class="bi bi-megaphone me-2"></i> {% if article.audio_file %}Play Audio{% else %}Generate Audio{% endif %}
                     </button>
                 {% endif %}
-                {# Like Button for detail page #}
                 <button class="btn app-btn icon-btn like-btn {% if is_liked_by_user %}liked{% endif %}" data-article-id="{{ article.pk }}" {% if not user.is_authenticated %}disabled title="Login to like" {% endif %}>
                     <i class="bi {% if is_liked_by_user %}bi-heart-fill{% else %}bi-heart{% endif %}"></i>
-                    <span class="like-count">{{ article.total_likes }}</span>
+                    <span class="like-count">{{ article.likes.count }}</span>
                 </button>
                 <button id="showWordCloudBtn" class="btn app-btn outline-btn">
                     <i class="bi bi-cloud-check-fill me-2"></i> View Word Cloud
                 </button>
-                {# Bookmark Button #}
                 <button class="btn app-btn icon-btn bookmark-btn {% if is_bookmarked_by_user %}bookmarked{% endif %}" data-article-id="{{ article.pk }}" {% if not user.is_authenticated %}disabled title="Login to bookmark" {% endif %}>
                     <i class="bi {% if is_bookmarked_by_user %}bi-bookmark-fill{% else %}bi-bookmark{% endif %}"></i>
                 </button>
             </div>
 
             <div id="summarySection" class="app-card summary-card mb-4" style="display:none;">
-                <div class="d-flex justify-content-between align-items-center mb-3">
-                    <h4 class="card-heading mb-0"><i class="bi bi-file-earmark-text-fill me-2"></i> Article Summary</h4>
+                <h4 class="card-heading mb-0"><i class="bi bi-file-earmark-text-fill me-2"></i> Article Summary</h4>
+                <div id="articleSummaryText" class="card-body-text summary-content mt-4">
+                    {% if article.summary %}{{ article.summary|linebreaksbr }}{% endif %}
                 </div>
-                <div id="articleSummaryText" class="card-body-text summary-content mb-4">
-                    </div>
-                {% if article.summary %}<div id="preExistingSummary" style="display: none;">{{ article.summary|linebreaksbr }}</div>{% endif %}
-
-                
             </div>
 
             <div id="audioSection" class="app-card audio-card mb-4" style="display:none;">
@@ -69,9 +60,9 @@
 
             <div id="wordCloudSection" class="app-card word-cloud-card mb-4" style="display:none;">
                 <h4 class="card-heading"><i class="bi bi-bar-chart-fill me-2"></i> Article Word Cloud</h4>
-                <div class="text-center">
-                    <img id="wordCloudImage" src="" alt="Article Word Cloud" class="img-fluid">
-                    <div id="wordCloudSpinner" class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;">
+                <div class="text-center" id="wordCloudContent">
+                    <img id="wordCloudImage" src="" alt="Article Word Cloud" class="img-fluid" style="display:none;">
+                    <div id="wordCloudSpinner" class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem; display:none;">
                         <span class="visually-hidden">Loading...</span>
                     </div>
                 </div>
@@ -83,63 +74,30 @@
                 <div class="card-body-text full-article-text">{{ article.content|linebreaksbr }}</div>
             </div>
 
-            {# Feedback Section #}
-            <div class="app-card feedback-card mb-4">
-                <h4 class="card-heading"><i class="bi bi-star-fill me-2"></i> Was this summary useful?</h4>
-                {% if user.is_authenticated %}
-                    {% if feedback_submitted %}
-                        <div class="alert app-alert alert-success mt-3 feedback-message">Thank you for your feedback!</div>
-                    {% elif user_feedback_exists %}
-                        <div class="alert app-alert alert-info mt-3 feedback-message">You have already submitted feedback for this summary.</div>
-                    {% else %}
-                        <form method="post" id="summaryFeedbackForm" class="feedback-form">
-                            {% csrf_token %}
-                            <input type="hidden" name="feedback_submit" value="1">
-                            <div class="form-group mb-3 radio-selection">
-                                <div class="d-flex gap-4">
-                                    {% for radio in form.useful %}
-                                        <div class="form-check form-check-inline custom-radio">
-                                            {{ radio.tag }}
-                                            <label class="form-check-label" for="{{ radio.id_for_label }}">
-                                                {{ radio.choice_label }}
-                                            </label>
-                                        </div>
-                                    {% endfor %}
-                                </div>
-                                {% if form.useful.errors %}
-                                    <div class="invalid-feedback d-block">{{ form.useful.errors }}</div>
-                                {% endif %}
-                            </div>
-                            <button type="submit" class="btn app-btn primary-btn submit-feedback-btn">Submit Feedback</button>
-                        </form>
-                    {% endif %}
-                {% else %}
-                    <div class="alert app-alert alert-warning mt-3">Please <a href="{% url 'users:login' %}">login</a> to provide feedback.</div>
-                {% endif %}
-
-                <div class="feedback-stats-display mt-4 pt-4 border-top">
-                    <div class="row">
-                        <div class="col-6">
-                            <div class="stat-item text-success">
-                                <div class="stat-label"><i class="bi bi-hand-thumbs-up-fill me-1"></i> Useful</div>
-                                <div id="usefulCount" class="stat-value">{{ feedback_useful }}</div>
-                            </div>
-                        </div>
-                        <div class="col-6">
-                            <div class="stat-item text-danger">
-                                <div class="stat-label"><i class="bi bi-hand-thumbs-down-fill me-1"></i> Not Useful</div>
-                                <div id="notUsefulCount" class="stat-value">{{ feedback_not_useful }}</div>
-                            </div>
-                        </div>
-                    </div>
+            {% if user.is_authenticated %}
+            <div class="app-card article-feedback-card mb-4">
+                <h4 class="card-heading"><i class="bi bi-hand-index-thumb-fill me-2"></i> Found the Article Helpful?</h4>
+                <div class="d-flex gap-3 mt-3">
+                    <form action="{% url 'news:article-feedback' article_id=article.pk %}" method="POST" class="w-100">
+                        {% csrf_token %}
+                        <button type="submit" name="feedback" value="useful" class="btn app-btn success-btn w-100">
+                            <i class="bi bi-hand-thumbs-up"></i> Useful
+                        </button>
+                    </form>
+                    <form action="{% url 'news:article-feedback' article_id=article.pk %}" method="POST" class="w-100">
+                        {% csrf_token %}
+                        <button type="submit" name="feedback" value="not_useful" class="btn app-btn danger-btn w-100">
+                            <i class="bi bi-hand-thumbs-down"></i> Not Useful
+                        </button>
+                    </form>
                 </div>
             </div>
+            {% endif %}
 
             <hr class="section-divider my-5">
 
             <div class="app-card comments-section-card mb-4">
                 <h4 class="card-heading"><i class="bi bi-chat-left-text-fill me-2"></i> Comments ({{ comments.count }})</h4>
-
                 {% if user.is_authenticated %}
                     <div class="comment-form-wrapper mb-4">
                         <h5 class="mb-3">Leave a Comment</h5>
@@ -147,7 +105,6 @@
                             {% csrf_token %}
                             <input type="hidden" name="comment_submit" value="1">
                             <div class="mb-3">
-                                {{ comment_form.content.errors }}
                                 {{ comment_form.content }}
                             </div>
                             <button type="submit" class="btn app-btn primary-btn submit-comment-btn">Post Comment</button>
@@ -157,55 +114,40 @@
                     <div class="alert app-alert alert-info mb-4">Please <a href="{% url 'users:login' %}">login</a> to leave a comment.</div>
                 {% endif %}
 
-
-                {% if comments %}
-                    <div class="existing-comments">
-                        {% for comment in comments %}
-                            <div class="comment-item p-3 mb-3 border rounded">
-                                <p class="comment-meta mb-1">
-                                    <a href="{% url 'users:profile' comment.user.username %}" class="comment-username-link">
-                                        <strong>{{ comment.user.username }}</strong>
-                                    </a>
-                                    <span class="text-muted small ms-2">{% if comment.created_at %}{{ comment.created_at|naturaltime }}{% endif %}</span>
-                                </p>
-                                <p class="comment-content mb-0">{{ comment.content|linebreaksbr }}</p>
-                            </div>
-                        {% endfor %}
+                {% for comment in comments %}
+                    <div class="comment-item p-3 mb-3 border rounded">
+                        <p class="comment-meta mb-1">
+                            <strong>{{ comment.user.username }}</strong>
+                            <span class="text-muted small ms-2">{{ comment.created_at|naturaltime }}</span>
+                        </p>
+                        <p class="comment-content mb-0">{{ comment.content|linebreaksbr }}</p>
+                        <div class="comment-reactions-wrapper mt-3">
+                            <button class="btn reaction-btn {% if comment.user_reaction == 'like' %}active{% endif %}" data-comment-id="{{ comment.pk }}" data-reaction-type="like" {% if not user.is_authenticated %}disabled{% endif %}>
+                                👍 <span class="reaction-count">{{ comment.like_count }}</span>
+                            </button>
+                            <button class="btn reaction-btn {% if comment.user_reaction == 'love' %}active{% endif %}" data-comment-id="{{ comment.pk }}" data-reaction-type="love" {% if not user.is_authenticated %}disabled{% endif %}>
+                                ❤️ <span class="reaction-count">{{ comment.love_count }}</span>
+                            </button>
+                            <button class="btn reaction-btn {% if comment.user_reaction == 'laugh' %}active{% endif %}" data-comment-id="{{ comment.pk }}" data-reaction-type="laugh" {% if not user.is_authenticated %}disabled{% endif %}>
+                                😂 <span class="reaction-count">{{ comment.laugh_count }}</span>
+                            </button>
+                            <button class="btn reaction-btn {% if comment.user_reaction == 'idea' %}active{% endif %}" data-comment-id="{{ comment.pk }}" data-reaction-type="idea" {% if not user.is_authenticated %}disabled{% endif %}>
+                                💡 <span class="reaction-count">{{ comment.idea_count }}</span>
+                            </button>
+                        </div>
                     </div>
-                {% else %}
+                {% empty %}
                     <p class="text-muted text-center">No comments yet. Be the first to share your thoughts!</p>
-                {% endif %}
-            </div>
-
-            <div class="social-share-section text-center mt-5 pt-5 border-top">
-                <h5 class="share-title"><i class="bi bi-share-fill"></i> Share this Article:</h5>
-                <div class="d-flex justify-content-center gap-3">
-                    <a href="https://twitter.com/intent/tweet?url={{ request.build_absolute_uri }}&text={{ article.title|urlencode }}" target="_blank" class="social-share-btn twitter">
-                        <i class="bi bi-twitter"></i>
-                    </a>
-                    <a href="https://www.facebook.com/sharer/sharer.php?u={{ request.build_absolute_uri }}" target="_blank" class="social-share-btn facebook">
-                        <i class="bi bi-facebook"></i>
-                    </a>
-                    <a href="https://www.linkedin.com/shareArticle?mini=true&url={{ request.build_absolute_uri }}&title={{ article.title|urlencode }}&summary={{ article.summary|truncatechars:100|urlencode }}" target="_blank" class="social-share-btn linkedin">
-                        <i class="bi bi-linkedin"></i>
-                    </a>
-                    <button id="copyLinkBtn" class="social-share-btn copy-link" data-url="{{ request.build_absolute_uri }}">
-                        <i class="bi bi-clipboard-check"></i>
-                    </button>
-                </div>
-            </div>
-
-            <div class="text-center mt-5 mb-5">
-                <a href="{% url 'news:article_list' %}" class="btn app-btn outline-btn back-to-articles-btn">
-                    <i class="bi bi-arrow-left-circle-fill me-2"></i> Back to Articles
-                </a>
+                {% endfor %}
             </div>
         </div>
     </div>
 </div>
 {% endblock %}
 
+
 {% block extra_js %}
+{# ... All your existing JavaScript blocks remain unchanged ... #}
 <script>
     // NEW: JavaScript variables for summary and audio availability
     const articleHasSummaryInitial = {% if article.summary %}true{% else %}false{% endif %};
@@ -707,4 +649,53 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 </script>
 
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const reactionButtons = document.querySelectorAll('.reaction-btn');
+    const csrftoken = getCookie('csrftoken'); // Assuming getCookie function exists
+
+    reactionButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            if (this.disabled) return;
+
+            const commentId = this.dataset.commentId;
+            const reactionType = this.dataset.reactionType;
+            const wrapper = this.closest('.comment-reactions-wrapper');
+
+            fetch(`/comment/${commentId}/toggle-reaction/`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrftoken,
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: JSON.stringify({ reaction_type: reactionType })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    // Update all counts for this comment
+                    wrapper.querySelector('[data-reaction-type="like"] .reaction-count').textContent = data.reaction_counts.like_count;
+                    wrapper.querySelector('[data-reaction-type="love"] .reaction-count').textContent = data.reaction_counts.love_count;
+                    wrapper.querySelector('[data-reaction-type="laugh"] .reaction-count').textContent = data.reaction_counts.laugh_count;
+                    wrapper.querySelector('[data-reaction-type="idea"] .reaction-count').textContent = data.reaction_counts.idea_count;
+                    
+                    // Update active state
+                    wrapper.querySelectorAll('.reaction-btn').forEach(btn => btn.classList.remove('active'));
+                    if (this.classList.contains('active')) {
+                        // If it was already active, it's now toggled off, so do nothing more.
+                    } else {
+                        // Otherwise, make the clicked button active.
+                        this.classList.add('active');
+                    }
+                } else {
+                    // You can use your showToast function here if you have one
+                    alert(data.message || 'An error occurred.');
+                }
+            })
+            .catch(error => console.error('Error:', error));
+        });
+    });
+});
+</script>
 {% endblock %}

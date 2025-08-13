@@ -196,6 +196,12 @@ RSS_FEEDS = {
     "Science": "https://feeds.bbci.co.uk/news/science_and_environment/rss.xml",
     "Health": "https://feeds.bbci.co.uk/news/health/rss.xml",
     "Sports": "http://feeds.bbci.co.uk/sport/rss.xml",
+    "Entertainment": "https://feeds.bbci.co.uk/news/entertainment/rss.xml",
+    "Politics": "https://feeds.bbci.co.uk/news/politics/rss.xml",
+    "Lifestyle": "https://feeds.bbci.co.uk/news/lifestyle/rss.xml",
+    "Environment": "https://feeds.bbci.co.uk/news/environment/rss.xml",
+    "Education": "https://feeds.bbci.co.uk/news/education/rss.xml",
+    "Gaming": "https://feeds.bbci.co.uk/news/gaming/rss.xml",
 }
 
 #

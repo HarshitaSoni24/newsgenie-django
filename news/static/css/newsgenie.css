@@ -1306,3 +1306,164 @@ body.dark-mode #chatbot-input {
     color: white;
     border: none;
 }
+/* ========================================= */
+/* ====== Theme Toggle Button Visibility Fix ====== */
+/* ========================================= */
+
+.theme-toggle-btn {
+    background-color: transparent !important;
+    border: none !important;
+    color: var(--light-text-secondary);
+    font-size: 1.25rem;
+    padding: 0.25rem 0.75rem;
+}
+
+.theme-toggle-btn:hover {
+    color: var(--light-heading-color);
+}
+
+body.dark-mode .theme-toggle-btn {
+    color: var(--dark-text-secondary); /* This makes the icon visible in dark mode */
+}
+
+body.dark-mode .theme-toggle-btn:hover {
+    color: var(--dark-heading-color);
+}/* ================================================= */
+/* ====== Article Feedback Button Styling Fix ====== */
+/* ================================================= */
+
+/* --- Default/Light Mode --- */
+.app-btn.success-btn {
+    background-color: #198754; /* A nice green */
+    color: #ffffff !important;
+    border: 1px solid #198754;
+}
+
+.app-btn.danger-btn {
+    background-color: #dc3545; /* A nice red */
+    color: #ffffff !important;
+    border: 1px solid #dc3545;
+}
+
+.app-btn.success-btn:hover {
+    background-color: #157347;
+    border-color: #146c43;
+}
+
+.app-btn.danger-btn:hover {
+    background-color: #bb2d3b;
+    border-color: #b02a37;
+}
+
+
+/* --- Dark Mode Styling (This is the main fix) --- */
+body.dark-mode .app-btn.success-btn {
+    background-color: #28a745; /* A slightly brighter green for dark backgrounds */
+    border-color: #28a745;
+}
+
+body.dark-mode .app-btn.danger-btn {
+    background-color: #e74c3c; /* A slightly brighter red for dark backgrounds */
+    border-color: #e74c3c;
+}
+
+body.dark-mode .app-btn.success-btn:hover {
+    background-color: #218838;
+    border-color: #1e7e34;
+}
+
+body.dark-mode .app-btn.danger-btn:hover {
+    background-color: #c0392b;
+    border-color: #b33225;
+}
+/* ================================================= */
+/* ====== Article Detail Feedback Stats Styling ====== */
+/* ================================================= */
+
+.feedback-stat-card {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    border-radius: var(--border-radius-md);
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+
+/* --- Light Mode --- */
+.feedback-stat-card.useful {
+    background-color: rgba(25, 135, 84, 0.1);
+    color: #198754;
+}
+
+.feedback-stat-card.not-useful {
+    background-color: rgba(220, 53, 69, 0.1);
+    color: #dc3545;
+}
+
+/* --- Dark Mode --- */
+body.dark-mode .feedback-stat-card.useful {
+    background-color: rgba(40, 167, 69, 0.2);
+    color: #361e92;
+}
+
+body.dark-mode .feedback-stat-card.not-useful {
+    background-color: rgba(231, 76, 60, 0.2);
+    color: #361e92;
+}
+
+/* === 18. COMMENT REACTIONS (NEW) ========================================== */
+.comment-reactions-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    border-top: 1px solid var(--light-border-color);
+    padding-top: 0.75rem;
+}
+body.dark-mode .comment-reactions-wrapper {
+    border-top-color: var(--dark-border-color);
+}
+
+.reaction-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    background-color: var(--light-bg-primary);
+    border: 1px solid var(--light-border-color);
+    border-radius: 50px;
+    padding: 0.25rem 0.75rem;
+    font-size: 0.9rem;
+    transition: all var(--transition-normal);
+}
+body.dark-mode .reaction-btn {
+    background-color: var(--dark-bg-primary);
+    border-color: var(--dark-border-color);
+    color: var(--dark-text-secondary);
+}
+
+.reaction-btn .reaction-count {
+    font-weight: 700;
+    color: var(--light-text-secondary);
+}
+body.dark-mode .reaction-btn .reaction-count {
+    color: var(--dark-text-secondary);
+}
+
+.reaction-btn:hover {
+    transform: translateY(-2px);
+    border-color: var(--accent-purple-start);
+}
+body.dark-mode .reaction-btn:hover {
+    border-color: var(--accent-blue-end);
+    background-color: var(--dark-bg-tertiary);
+}
+
+/* Style for when a user has clicked a reaction */
+.reaction-btn.active {
+    background: var(--gradient-primary);
+    color: white;
+    border-color: transparent;
+}
+.reaction-btn.active .reaction-count {
+    color: white;
+}

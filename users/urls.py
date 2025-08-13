@@ -1,14 +1,26 @@
 from django.urls import path
-from . import views
+from .views import (
+    register_view,
+    login_view,
+    logout_view,
+    profile_view,
+    edit_profile_view,
+    useful_articles_list,
+    not_useful_articles_list,
+)
 
 app_name = 'users'
 
 urlpatterns = [
-    path('register/', views.register_view, name='register'),
-    path('login/', views.login_view, name='login'),
-    path('logout/', views.logout_view, name='logout'),
+    path('register/', register_view, name='register'),
+    path('login/', login_view, name='login'),
+    path('logout/', logout_view, name='logout'),
     
-    # CORRECTED ORDER: The more specific 'edit' path now comes first.
-    path('profile/edit/', views.edit_profile_view, name='edit_profile'),
-    path('profile/<str:username>/', views.profile_view, name='profile'),
+    # --- FIX: Specific paths must come BEFORE the general path ---
+    path('profile/edit/', edit_profile_view, name='edit_profile'),
+    path('profile/useful-articles/', useful_articles_list, name='useful-articles-list'),
+    path('profile/not-useful-articles/', not_useful_articles_list, name='not-useful-articles-list'),
+
+    # General path with a variable comes LAST
+    path('profile/<str:username>/', profile_view, name='profile'),
 ]

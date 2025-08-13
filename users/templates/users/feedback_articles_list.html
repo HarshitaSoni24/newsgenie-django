@@ -1,0 +1,60 @@
+{% extends 'news/base.html' %}
+{% load static %}
+
+{% block title %}Articles You Found Useful{% endblock %}
+
+{% block content %}
+<div class="page-header-section text-center mb-5">
+    <h1 class="page-title-heading">Articles You Found Useful</h1>
+    <p class="page-subtitle-text">A list of articles where you provided positive feedback on the summary.</p>
+</div>
+
+{% if articles %}
+<div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4 article-grid">
+    {% for article in articles %}
+    <div class="col">
+        <div class="app-card article-card h-100">
+            <div class="card-body d-flex flex-column">
+                <h5 class="card-title-article">{{ article.title }}</h5>
+                <div class="card-meta-info">
+                    <span>By {{ article.author }} on {{ article.published_at|date:"F d, Y" }}</span>
+                    {% if article.reading_time %}
+                        <span class="reading-time"><i class="bi bi-clock-fill"></i> {{ article.reading_time }} min read</span>
+                    {% endif %}
+                </div>
+                <p class="card-text-summary">{{ article.summary|default:article.content|truncatechars:150 }}</p>
+                
+                <div class="article-actions">
+                    <a href="{% url 'news:detail' article.pk %}" class="btn app-btn read-more-btn">Read More</a>
+                    <div class="d-flex gap-2 button-group-actions">
+                        <button class="btn app-btn icon-btn like-btn {% if article.is_liked_by_user %}liked{% endif %}" data-article-id="{{ article.pk }}" {% if not user.is_authenticated %}disabled title="Login to like" {% endif %}>
+                            <i class="bi {% if article.is_liked_by_user %}bi-heart-fill{% else %}bi-heart{% endif %}"></i>
+                            <span class="like-count">{{ article.total_likes }}</span>
+                        </button>
+                        <button class="btn app-btn icon-btn bookmark-btn {% if article.is_bookmarked_by_user %}bookmarked{% endif %}" data-article-id="{{ article.pk }}" {% if not user.is_authenticated %}disabled title="Login to bookmark" {% endif %}>
+                            <i class="bi {% if article.is_bookmarked_by_user %}bi-bookmark-fill{% else %}bi-bookmark{% endif %}"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div class="card-footer article-card-footer">
+                {% for category in article.category.all %}
+                    <span class="badge category-pill-small me-1">{{ category.name }}</span>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<div class="text-center py-5 app-card">
+    <p class="lead">You haven't marked any summaries as "Useful" yet.</p>
+    <a href="{% url "news:article_list" %}" class="btn app-btn primary-btn mt-3">Browse Articles</a>
+</div>
+{% endif %}
+
+{% endblock content %}
+
+{% block extra_js %}
+{# You can include the like/bookmark JS here if it's not already in a base template #}
+{% endblock %}

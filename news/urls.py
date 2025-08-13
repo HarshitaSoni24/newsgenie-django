@@ -7,10 +7,11 @@ urlpatterns = [
     path('', views.homepage, name="homepage"), # MODIFIED: Homepage is now the root
     path('articles/', views.article_list, name="article_list"), # MODIFIED: Articles page moved to /articles/
     path('article/<int:pk>/', views.article_detail, name="detail"),
-    
+    path('article/<int:article_id>/feedback/', views.article_feedback, name='article-feedback'), # ADD THIS LINE
      # NEW FEATURE: URL for generating the word cloud image
     path('article/<int:pk>/wordcloud/', views.generate_word_cloud_view, name="word_cloud"),
     path('chatbot/', views.chatbot_response, name='chatbot_response'),
+    path('comment/<int:pk>/toggle-reaction/', views.toggle_comment_reaction, name='toggle_comment_reaction'),
 
     path('article/<int:pk>/generate-summary/', views.generate_summary_view, name="generate_summary"),
     path('article/<int:pk>/generate-audio/', views.generate_audio_view, name="generate_audio"),
