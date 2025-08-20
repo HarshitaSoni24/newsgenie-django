@@ -140,31 +140,103 @@
                     <p class="text-muted text-center">No comments yet. Be the first to share your thoughts!</p>
                 {% endfor %}
             </div>
+
+            <div class="social-share-section my-5">
+                <h5 class="share-title"><i class="bi bi-share-fill"></i> Share:</h5>
+                <div class="d-flex align-items-center gap-3">
+                    <a href="https://twitter.com/intent/tweet?url={{ request.build_absolute_uri }}&text={{ article.title|urlencode }}" target="_blank" class="social-share-btn twitter">
+                        <i class="bi bi-twitter"></i>
+                    </a>
+                    <a href="https://www.facebook.com/sharer/sharer.php?u={{ request.build_absolute_uri }}" target="_blank" class="social-share-btn facebook">
+                        <i class="bi bi-facebook"></i>
+                    </a>
+                    <a href="https://www.linkedin.com/shareArticle?mini=true&url={{ request.build_absolute_uri }}&title={{ article.title|urlencode }}&summary={{ article.summary|truncatechars:100|urlencode }}" target="_blank" class="social-share-btn linkedin">
+                        <i class="bi bi-linkedin"></i>
+                    </a>
+                    <button id="copyLinkBtn" class="social-share-btn copy-link" data-url="{{ request.build_absolute_uri }}">
+                        <i class="bi bi-clipboard-check"></i>
+                    </button>
+                </div>
+            </div>
+
+            <div class="text-center mt-5 mb-5">
+                <a href="{% url 'news:article_list' %}" class="btn app-btn outline-btn back-to-articles-btn">
+                    <i class="bi bi-arrow-left-circle-fill me-2"></i> Back to Articles
+                </a>
+            </div>
         </div>
     </div>
 </div>
+
+<!-- Hidden element to store pre-existing summary content -->
+{% if article.summary %}
+<div id="preExistingSummary" style="display:none;">{{ article.summary|linebreaksbr }}</div>
+{% endif %}
+
 {% endblock %}
 
-
 {% block extra_js %}
-{# ... All your existing JavaScript blocks remain unchanged ... #}
 <script>
-    // NEW: JavaScript variables for summary and audio availability
+    // Global variables for summary and audio availability
     const articleHasSummaryInitial = {% if article.summary %}true{% else %}false{% endif %};
     const articleHasAudioInitial = {% if article.audio_file %}true{% else %}false{% endif %};
-    const preExistingSummaryContent = document.getElementById('preExistingSummary') ? document.getElementById('preExistingSummary').innerHTML : '';
+    const articleId = {{ article.pk }};
+    
+    // Get pre-existing summary content
+    let preExistingSummaryContent = '';
+    const preExistingSummaryElement = document.getElementById('preExistingSummary');
+    if (preExistingSummaryElement) {
+        preExistingSummaryContent = preExistingSummaryElement.innerHTML;
+    }
+
+    // CSRF token utility
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+    const csrftoken = getCookie('csrftoken');
+
+    // Global Toast/Notification Function
+    function showToast(message, type = 'info') {
+        const toastContainer = document.createElement('div');
+        toastContainer.className = `toast align-items-center text-white bg-${type} border-0 fade show position-fixed bottom-0 end-0 m-3`;
+        toastContainer.style.zIndex = '9999';
+        toastContainer.setAttribute('role', 'alert');
+        toastContainer.setAttribute('aria-live', 'assertive');
+        toastContainer.setAttribute('aria-atomic', 'true');
+
+        toastContainer.innerHTML = `
+            <div class="d-flex">
+                <div class="toast-body">${message}</div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" onclick="this.parentElement.parentElement.remove()"></button>
+            </div>
+        `;
+        document.body.appendChild(toastContainer);
+
+        setTimeout(() => {
+            toastContainer.remove();
+        }, 5000);
+    }
 
     document.addEventListener('DOMContentLoaded', function() {
-        // --- NEW: DECLARATIONS FOR READING METRICS TRACKING ---
-        let timeOnPage = 0; // Declared with 'let'
-        let timerInterval;  // Declared with 'let'
-        const sendMetricsInterval = 10 * 1000; // Declared with 'const'
-        let maxScrollDepth = 0.0; // Declared with 'let'
-        const fullArticleContent = document.querySelector('.full-article-content-card'); // Declared with 'const'
-        // --- END NEW DECLARATIONS ---
+        // Reading metrics tracking variables
+        let timeOnPage = 0;
+        let timerInterval;
+        const sendMetricsInterval = 10 * 1000;
+        let maxScrollDepth = 0.0;
+        const fullArticleContent = document.querySelector('.full-article-content-card');
 
-
-        const articleId = {{ article.pk }};
+        // DOM element references
         const generateSummaryBtn = document.getElementById('generateSummaryBtn');
         const generateAudioBtn = document.getElementById('generateAudioBtn');
         const summarySection = document.getElementById('summarySection');
@@ -172,57 +244,13 @@
         const audioSection = document.getElementById('audioSection');
         const summaryAudioPlayer = document.getElementById('summaryAudioPlayer');
         const actionButtonsContainer = document.querySelector('.action-buttons-wrapper');
-        
+        const showWordCloudBtn = document.getElementById('showWordCloudBtn');
+        const wordCloudSection = document.getElementById('wordCloudSection');
+        const wordCloudImage = document.getElementById('wordCloudImage');
+        const wordCloudSpinner = document.getElementById('wordCloudSpinner');
+        const copyLinkBtn = document.getElementById('copyLinkBtn');
 
-        const usefulCountElem = document.getElementById('usefulCount');
-        const notUsefulCountElem = document.getElementById('notUsefulCount');
-        const summaryFeedbackForm = document.getElementById('summaryFeedbackForm');
-
-
-        function getCookie(name) {
-            let cookieValue = null;
-            if (document.cookie && document.cookie !== '') {
-                const cookies = document.cookie.split(';');
-                for (let i = 0; i < cookies.length; i++) {
-                    const cookie = cookies[i].trim();
-                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
-                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                        break;
-                    }
-                }
-            }
-            return cookieValue;
-        }
-        const csrftoken = getCookie('csrftoken');
-
-        function showToast(message, type = 'info') {
-            const toastContainer = document.createElement('div');
-            toastContainer.className = `toast align-items-center text-white bg-${type} border-0 fade show position-fixed bottom-0 end-0 m-3`;
-            toastContainer.setAttribute('role', 'alert');
-            toastContainer.setAttribute('aria-live', 'assertive');
-            toastContainer.setAttribute('aria-atomic', 'true');
-
-            toastContainer.innerHTML = `
-                <div class="d-flex">
-                    <div class="toast-body">${message}</div>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast" aria-label="Close"></button>
-                </div>
-            `;
-            document.body.appendChild(toastContainer);
-
-            const bsToast = new bootstrap.Toast(toastContainer);
-            bsToast.show();
-
-            setTimeout(() => {
-                bsToast.hide();
-                toastContainer.addEventListener('hidden.bs.toast', () => {
-                    toastContainer.remove();
-                });
-            }, 3000);
-        }
-
-        // --- Initial State Adjustments on Page Load ---
-
+        // Initial state adjustments
         {% if article.audio_file %}
             if (summaryAudioPlayer) {
                 summaryAudioPlayer.src = "{{ article.audio_file.url }}";
@@ -230,16 +258,15 @@
             }
         {% endif %}
 
-        summarySection.style.display = 'none';
-
+        if (summarySection) {
+            summarySection.style.display = 'none';
+        }
 
         // Handle Generate Summary Button Click
         if (generateSummaryBtn) {
             generateSummaryBtn.addEventListener('click', function() {
                 const btn = this;
                 const originalBtnHtml = btn.innerHTML;
-
-                
 
                 if (articleHasSummaryInitial && preExistingSummaryContent.trim().length > 0) {
                     if (summarySection.style.display === 'none') {
@@ -263,108 +290,106 @@
                         'Content-Type': 'application/json',
                         'X-Requested-With': 'XMLHttpRequest'
                     },
-    
                 })
                 .then(response => response.json())
                 .then(data => {
                     if (data.status === 'success') {
                         articleSummaryText.innerHTML = data.summary.replace(/\n/g, '<br>');
                         summarySection.style.display = 'block';
-                        btn.innerHTML = '<i class="bi bi-eye me-2"></i> View Summary';
+                        btn.innerHTML = '<i class="bi bi-eye-slash me-2"></i> Hide Summary';
 
                         let currentGenerateAudioBtn = document.getElementById('generateAudioBtn');
                         if (currentGenerateAudioBtn && !articleHasAudioInitial) {
-                            currentGenerateAudioBtn.style.display = 'block';
+                            currentGenerateAudioBtn.style.display = 'inline-block';
                         } else if (!currentGenerateAudioBtn) {
                             currentGenerateAudioBtn = document.createElement('button');
                             currentGenerateAudioBtn.id = 'generateAudioBtn';
                             currentGenerateAudioBtn.className = 'btn app-btn secondary-btn';
                             currentGenerateAudioBtn.innerHTML = '<i class="bi bi-megaphone me-2"></i> Generate Audio';
                             actionButtonsContainer.appendChild(currentGenerateAudioBtn);
-                        }
-                        if (currentGenerateAudioBtn) {
+                            
+                            // Add event listener to the new button
                             currentGenerateAudioBtn.addEventListener('click', handleGenerateAudio);
                         }
 
                         showToast('Summary generated successfully!', 'success');
                     } else {
                         showToast(data.message || 'Failed to generate summary.', 'danger');
+                        btn.innerHTML = originalBtnHtml;
                     }
                 })
                 .catch(error => {
                     console.error('Error:', error);
                     showToast('An error occurred while generating summary.', 'danger');
+                    btn.innerHTML = originalBtnHtml;
                 })
                 .finally(() => {
                     btn.disabled = false;
-                    if (data && data.status !== 'success') {
-                        btn.innerHTML = originalBtnHtml;
-                    }
                 });
             });
         }
-
 
         // Function to handle Generate Audio Button Click
-        if (generateAudioBtn) {
-            generateAudioBtn.addEventListener('click', function() {
-                const btn = this;
-                const originalBtnHtml = btn.innerHTML;
+        function handleGenerateAudio() {
+            const btn = this;
+            const originalBtnHtml = btn.innerHTML;
 
-                if (articleHasAudioInitial && summaryAudioPlayer.src && summaryAudioPlayer.src !== window.location.href + '#') {
-                    if (audioSection.style.display === 'none') {
-                        audioSection.style.display = 'block';
-                        summaryAudioPlayer.play();
-                        btn.innerHTML = '<i class="bi bi-volume-mute-fill me-2"></i> Hide Audio';
-                        showToast('Playing existing audio summary!', 'info');
-                    } else {
-                        summaryAudioPlayer.pause();
-                        audioSection.style.display = 'none';
-                        btn.innerHTML = '<i class="bi bi-megaphone me-2"></i> Play Audio';
-                    }
-                    return;
+            if (articleHasAudioInitial && summaryAudioPlayer.src && summaryAudioPlayer.src !== window.location.href + '#') {
+                if (audioSection.style.display === 'none') {
+                    audioSection.style.display = 'block';
+                    summaryAudioPlayer.play();
+                    btn.innerHTML = '<i class="bi bi-volume-mute-fill me-2"></i> Hide Audio';
+                    showToast('Playing existing audio summary!', 'info');
+                } else {
+                    summaryAudioPlayer.pause();
+                    audioSection.style.display = 'none';
+                    btn.innerHTML = '<i class="bi bi-megaphone me-2"></i> Play Audio';
                 }
+                return;
+            }
 
-                btn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Generating...';
-                btn.disabled = true;
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Generating...';
+            btn.disabled = true;
 
-                fetch(`/article/${articleId}/generate-audio/`, {
-                    method: 'POST',
-                    headers: {
-                        'X-CSRFToken': csrftoken,
-                        'Content-Type': 'application/json',
-                        'X-Requested-With': 'XMLHttpRequest'
-                    },
-                    body: JSON.stringify({})
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.status === 'success') {
-                        summaryAudioPlayer.src = data.audio_url;
-                        summaryAudioPlayer.load();
-                        summaryAudioPlayer.play();
-                        audioSection.style.display = 'block';
-                        btn.innerHTML = '<i class="bi bi-volume-mute-fill me-2"></i> Hide Audio';
-                        showToast('Audio generated and playing!', 'success');
-                    } else {
-                        showToast(data.message || 'Failed to generate audio.', 'danger');
-                    }
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                    showToast('An error occurred while generating audio.', 'danger');
-                })
-                .finally(() => {
-                    btn.disabled = false;
-                    if (!summaryAudioPlayer.src || (data && data.status !== 'success')) {
-                         btn.innerHTML = originalBtnHtml;
-                    }
-                });
+            fetch(`/article/${articleId}/generate-audio/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': csrftoken,
+                    'Content-Type': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: JSON.stringify({})
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    summaryAudioPlayer.src = data.audio_url;
+                    summaryAudioPlayer.load();
+                    summaryAudioPlayer.play();
+                    audioSection.style.display = 'block';
+                    btn.innerHTML = '<i class="bi bi-volume-mute-fill me-2"></i> Hide Audio';
+                    showToast('Audio generated and playing!', 'success');
+                } else {
+                    showToast(data.message || 'Failed to generate audio.', 'danger');
+                    btn.innerHTML = originalBtnHtml;
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showToast('An error occurred while generating audio.', 'danger');
+                btn.innerHTML = originalBtnHtml;
+            })
+            .finally(() => {
+                btn.disabled = false;
             });
         }
 
+        // Add event listener to existing generate audio button
+        if (generateAudioBtn) {
+            generateAudioBtn.addEventListener('click', handleGenerateAudio);
+        }
 
-        // --- Article Liking Logic (repeated from article_list for standalone use if needed) ---
+        // Article Liking Logic
         const likeButtons = document.querySelectorAll('.like-btn');
         likeButtons.forEach(button => {
             if (!button.disabled) {
@@ -408,8 +433,7 @@
             }
         });
 
-
-        // --- Article Bookmarking Logic (copied from article_list for standalone use if needed) ---
+        // Article Bookmarking Logic
         const bookmarkButtons = document.querySelectorAll('.bookmark-btn');
         bookmarkButtons.forEach(button => {
             if (!button.disabled) {
@@ -451,93 +475,90 @@
             }
         });
 
+        // Word Cloud functionality
+        if (showWordCloudBtn) {
+            showWordCloudBtn.addEventListener('click', function() {
+                if (wordCloudSection.style.display === 'none') {
+                    wordCloudSection.style.display = 'block';
+                    wordCloudImage.style.display = 'none';
+                    wordCloudSpinner.style.display = 'block';
 
-        // Handle Summary Feedback Form Submission (AJAX for dynamic update of counts)
-        if (summaryFeedbackForm) {
-            summaryFeedbackForm.addEventListener('submit', function(event) {
-                event.preventDefault();
+                    wordCloudImage.src = `/article/${articleId}/wordcloud/`;
 
-                const formData = new FormData(summaryFeedbackForm);
+                    wordCloudImage.onload = function() {
+                        wordCloudSpinner.style.display = 'none';
+                        wordCloudImage.style.display = 'block';
+                    };
 
-                const submitBtn = summaryFeedbackForm.querySelector('button[type="submit"]');
-                const originalBtnText = submitBtn.innerHTML;
-                submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Submitting...';
-                submitBtn.disabled = true;
+                    wordCloudImage.onerror = function() {
+                        wordCloudSpinner.style.display = 'none';
+                        showToast('Failed to generate word cloud.', 'danger');
+                    };
+                } else {
+                    wordCloudSection.style.display = 'none';
+                }
+            });
+        }
 
-                fetch(summaryFeedbackForm.action, {
-                    method: 'POST',
-                    headers: {
-                        'X-CSRFToken': csrftoken,
-                        'X-Requested-With': 'XMLHttpRequest'
-                    },
-                    body: formData
-                })
-                .then(response => {
-                    if (!response.ok) {
-                        return response.text().then(text => { throw new Error(text) });
-                    }
-                    return response.text();
-                })
-                .then(text => {
-                    const parser = new DOMParser();
-                    const doc = parser.parseFromString(text, 'text/html');
-                    const newUsefulCount = doc.getElementById('usefulCount').textContent;
-                    const newNotUsefulCount = doc.getElementById('notUsefulCount').textContent;
-
-                    usefulCountElem.textContent = newUsefulCount;
-                    notUsefulCountElem.textContent = newNotUsefulCount;
-
-                    const oldFeedbackMessage = document.querySelector('.feedback-message');
-                    if (oldFeedbackMessage) {
-                        oldFeedbackMessage.remove();
-                    }
-                    const feedbackMessageDiv = document.createElement('div');
-                    feedbackMessageDiv.className = 'alert app-alert alert-success mt-3 feedback-message';
-                    feedbackMessageDiv.textContent = 'Thank you for your feedback!';
-                    summaryFeedbackForm.parentNode.insertBefore(feedbackMessageDiv, summaryFeedbackForm);
-                    summaryFeedbackForm.style.display = 'none';
-
-                    showToast('Feedback submitted successfully!', 'success');
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                    showToast('An error occurred while submitting feedback.', 'danger');
-                })
-                .finally(() => {
-                    submitBtn.innerHTML = originalBtnText;
-                    submitBtn.disabled = false;
+        // Copy Link functionality
+        if (copyLinkBtn) {
+            copyLinkBtn.addEventListener('click', function() {
+                const urlToCopy = this.dataset.url;
+                navigator.clipboard.writeText(urlToCopy).then(function() {
+                    showToast('Article link copied to clipboard!', 'success');
+                }, function(err) {
+                    console.error('Could not copy text: ', err);
+                    showToast('Failed to copy link.', 'danger');
                 });
             });
         }
 
-        // Generic Toast/Notification Function
-        function showToast(message, type = 'info') {
-            const toastContainer = document.createElement('div');
-            toastContainer.className = `toast align-items-center text-white bg-${type} border-0 fade show position-fixed bottom-0 end-0 m-3`;
-            toastContainer.setAttribute('role', 'alert');
-            toastContainer.setAttribute('aria-live', 'assertive');
-            toastContainer.setAttribute('aria-atomic', 'true');
+        // Comment Reactions functionality
+        const reactionButtons = document.querySelectorAll('.reaction-btn');
+        reactionButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                if (this.disabled) return;
 
-            toastContainer.innerHTML = `
-                <div class="d-flex">
-                    <div class="toast-body">${message}</div>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast" aria-label="Close"></button>
-                </div>
-            `;
-            document.body.appendChild(toastContainer);
+                const commentId = this.dataset.commentId;
+                const reactionType = this.dataset.reactionType;
+                const wrapper = this.closest('.comment-reactions-wrapper');
+                const wasActive = this.classList.contains('active');
 
-            const bsToast = new bootstrap.Toast(toastContainer);
-            bsToast.show();
-
-            setTimeout(() => {
-                bsToast.hide();
-                toastContainer.addEventListener('hidden.bs.toast', () => {
-                    toastContainer.remove();
+                fetch(`/comment/${commentId}/toggle-reaction/`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': csrftoken,
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    body: JSON.stringify({ reaction_type: reactionType })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        // Update all counts for this comment
+                        wrapper.querySelector('[data-reaction-type="like"] .reaction-count').textContent = data.reaction_counts.like_count;
+                        wrapper.querySelector('[data-reaction-type="love"] .reaction-count').textContent = data.reaction_counts.love_count;
+                        wrapper.querySelector('[data-reaction-type="laugh"] .reaction-count').textContent = data.reaction_counts.laugh_count;
+                        wrapper.querySelector('[data-reaction-type="idea"] .reaction-count').textContent = data.reaction_counts.idea_count;
+                        
+                        // Update active state
+                        wrapper.querySelectorAll('.reaction-btn').forEach(btn => btn.classList.remove('active'));
+                        if (!wasActive) {
+                            this.classList.add('active');
+                        }
+                    } else {
+                        showToast(data.message || 'An error occurred.', 'danger');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    showToast('An error occurred while updating reaction.', 'danger');
                 });
-            }, 3000);
-        }
+            });
+        });
 
-        // --- Reading Metrics Tracking ---
+        // Reading Metrics Tracking (only for authenticated users)
         {% if user.is_authenticated %}
             timerInterval = setInterval(() => {
                 timeOnPage++;
@@ -545,14 +566,15 @@
 
             window.addEventListener('scroll', function() {
                 if (fullArticleContent) {
+                    const rect = fullArticleContent.getBoundingClientRect();
                     const scrollHeight = fullArticleContent.scrollHeight;
                     const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
                     const clientHeight = document.documentElement.clientHeight;
                     
                     if (scrollHeight > clientHeight) {
-                        const currentScrollPercentage = Math.min(1.0, (scrollTop + clientHeight) / scrollHeight);
+                        const currentScrollPercentage = Math.min(1.0, (scrollTop + clientHeight - rect.top) / scrollHeight);
                         if (currentScrollPercentage > maxScrollDepth) {
-                            maxScrollDepth = currentScrollPercentage;
+                            maxScrollDepth = Math.max(0, currentScrollPercentage);
                         }
                     } else {
                         maxScrollDepth = 1.0;
@@ -560,21 +582,11 @@
                 }
             });
 
-            window.addEventListener('beforeunload', sendArticleMetrics);
-            window.addEventListener('visibilitychange', () => {
-                if (document.visibilityState === 'hidden') {
-                    sendArticleMetrics();
-                }
-            });
-
-            setInterval(sendArticleMetrics, sendMetricsInterval);
-
-
             function sendArticleMetrics() {
                 const data = {
                     article_id: articleId,
                     time_on_page: timeOnPage,
-                    scroll_depth: maxScrollDepth
+                    scroll_depth: Math.max(0, Math.min(1, maxScrollDepth))
                 };
 
                 fetch('/track-metrics/', {
@@ -595,107 +607,16 @@
                     console.error('Error sending metrics:', error);
                 });
             }
-        {% endif %}
 
-    });
-</script>
-
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    const copyLinkBtn = document.getElementById('copyLinkBtn');
-    if (copyLinkBtn) {
-        copyLinkBtn.addEventListener('click', function() {
-            const urlToCopy = this.dataset.url;
-            navigator.clipboard.writeText(urlToCopy).then(function() {
-                // You can use your existing showToast function if it's globally available
-                // If not, a simple alert will work.
-                alert('Article link copied to clipboard!');
-            }, function(err) {
-                console.error('Could not copy text: ', err);
-            });
-        });
-    }
-});
-</script>
-
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    const showWordCloudBtn = document.getElementById('showWordCloudBtn');
-    const wordCloudSection = document.getElementById('wordCloudSection');
-    const wordCloudImage = document.getElementById('wordCloudImage');
-    const wordCloudSpinner = document.getElementById('wordCloudSpinner');
-    const articleId = {{ article.pk }};
-
-    if (showWordCloudBtn) {
-        showWordCloudBtn.addEventListener('click', function() {
-            if (wordCloudSection.style.display === 'none') {
-                wordCloudSection.style.display = 'block';
-                wordCloudImage.style.display = 'none'; // Hide image initially
-                wordCloudSpinner.style.display = 'block'; // Show spinner
-
-                // Set the src to the new URL endpoint to trigger the image generation
-                wordCloudImage.src = `/article/${articleId}/wordcloud/`;
-
-                // Wait for the image to load before showing it
-                wordCloudImage.onload = function() {
-                    wordCloudSpinner.style.display = 'none'; // Hide spinner
-                    wordCloudImage.style.display = 'block'; // Show image
-                };
-            } else {
-                wordCloudSection.style.display = 'none';
-            }
-        });
-    }
-});
-</script>
-
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    const reactionButtons = document.querySelectorAll('.reaction-btn');
-    const csrftoken = getCookie('csrftoken'); // Assuming getCookie function exists
-
-    reactionButtons.forEach(button => {
-        button.addEventListener('click', function() {
-            if (this.disabled) return;
-
-            const commentId = this.dataset.commentId;
-            const reactionType = this.dataset.reactionType;
-            const wrapper = this.closest('.comment-reactions-wrapper');
-
-            fetch(`/comment/${commentId}/toggle-reaction/`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRFToken': csrftoken,
-                    'X-Requested-With': 'XMLHttpRequest'
-                },
-                body: JSON.stringify({ reaction_type: reactionType })
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.status === 'success') {
-                    // Update all counts for this comment
-                    wrapper.querySelector('[data-reaction-type="like"] .reaction-count').textContent = data.reaction_counts.like_count;
-                    wrapper.querySelector('[data-reaction-type="love"] .reaction-count').textContent = data.reaction_counts.love_count;
-                    wrapper.querySelector('[data-reaction-type="laugh"] .reaction-count').textContent = data.reaction_counts.laugh_count;
-                    wrapper.querySelector('[data-reaction-type="idea"] .reaction-count').textContent = data.reaction_counts.idea_count;
-                    
-                    // Update active state
-                    wrapper.querySelectorAll('.reaction-btn').forEach(btn => btn.classList.remove('active'));
-                    if (this.classList.contains('active')) {
-                        // If it was already active, it's now toggled off, so do nothing more.
-                    } else {
-                        // Otherwise, make the clicked button active.
-                        this.classList.add('active');
-                    }
-                } else {
-                    // You can use your showToast function here if you have one
-                    alert(data.message || 'An error occurred.');
+            window.addEventListener('beforeunload', sendArticleMetrics);
+            window.addEventListener('visibilitychange', () => {
+                if (document.visibilityState === 'hidden') {
+                    sendArticleMetrics();
                 }
-            })
-            .catch(error => console.error('Error:', error));
-        });
+            });
+
+            setInterval(sendArticleMetrics, sendMetricsInterval);
+        {% endif %}
     });
-});
 </script>
 {% endblock %}
